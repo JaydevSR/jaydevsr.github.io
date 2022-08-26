@@ -2,20 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
-    <loc>index.html</loc>
-    <lastmod>2022-07-25</lastmod>
+    <loc>https://jaydevsr.github.io/research/index.html</loc>
+    <lastmod>2022-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
-    <loc>projects/index.html</loc>
-    <lastmod>2022-07-25</lastmod>
+    <loc>https://jaydevsr.github.io/index.html</loc>
+    <lastmod>2022-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
-    <loc>404/index.html</loc>
-    <lastmod>2022-07-25</lastmod>
+    <loc>https://jaydevsr.github.io/posts/index.html</loc>
+    <lastmod>2022-08-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+</url>
+<url>
+    <loc>https://jaydevsr.github.io/null/</loc>
+    <lastmod>2022-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
