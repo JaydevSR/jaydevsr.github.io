@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Montserrat&family=Open+Sans&display=swap');
+
 /* ==================================================================
     VARIABLES
 ================================================================== */
@@ -13,6 +14,7 @@
   --base-line-height: 1.5;
 
   --small-font-size:  calc(var(--base-font-size) * 0.7);
+  --large-font-size:  calc(var(--base-font-size) * 1.6);
 
   --spacing-unit:     30px;
 
@@ -20,11 +22,39 @@
   --text-color:       #363431;
   --primary-color:    #E1E5EA;
   --secondary-color:  #A7BBC7;
-  --tertiary-color:   #C9576C;
+  --tertiary-color:   #c9576c;
 
   --grey-color:       #999;
   --grey-color-light: #cccccc;
   --grey-color-dark:  #5e5e5e;
+}
+
+:root.darkmode {
+    --background-color: #343131;
+    --text-color:       #c9c7c3;
+    --primary-color:    #E1E5EA;
+    --secondary-color:  #A7BBC7;
+    --tertiary-color:   #C9576C;
+
+    --grey-color:       #999999;
+    --grey-color-light:  #5e5e5e;
+    --grey-color-dark:  #cccccc;
+}
+
+img.darkmode {
+    filter: brightness(.8) contrast(1.2);
+}
+
+.franklin-content .about a.darkmode {
+    font-weight: 600;
+}
+
+.theme-toggle #darkmode-btn {
+    display: none;
+}
+
+.theme-toggle #lightmode-btn {
+    display: inline-block;
 }
 
 /* ==================================================================
@@ -44,12 +74,40 @@
         --grey-color-dark:  #cccccc;
     }
 
+    .theme-toggle #lightmode-btn {
+        display: none;
+    }
+
+    .theme-toggle #darkmode-btn {
+        display: inline-block;
+    }
+
     img {
         filter: brightness(.8) contrast(1.2);
     }
 
     .franklin-content .about a {
         font-weight: 600;
+    }
+
+    :root.lightmode {
+        --background-color: #FAF3F3;
+        --text-color:       #363431;
+        --primary-color:    #E1E5EA;
+        --secondary-color:  #A7BBC7;
+        --tertiary-color:   #c9576c;
+
+        --grey-color:       #999;
+        --grey-color-light: #cccccc;
+        --grey-color-dark:  #5e5e5e;
+    }
+
+    img.lightmode {
+        filter: brightness(1) contrast(1);
+    }
+
+    .franklin-content .about a.lightmode {
+        font-weight: 500;
     }
 }
 
@@ -119,6 +177,34 @@ nav .nav-link:hover {
     color: var(--grey-color-light) !important;
 }
 
+nav .navbar-collapse {
+    background-color: var(--background-color) !important;
+}
+
+nav .theme-toggle-wrapper {
+    z-index: 100;
+}
+
+nav .theme-toggle {
+    outline: none;
+    border: none;
+    border-radius: 50%;
+    font-size: var(--large-font-size);
+    color: var(--gray-color) !important;
+    background-color: var(--background-color) !important;
+}
+
+@media (max-width: 991px) {
+    nav {
+        box-shadow: none;
+    }
+    
+    nav .navbar-collapse {
+        background-color: var(--background-color) !important;
+        box-shadow: 0 0.125rem 0.25rem 0 rgb(0 0 0 / 11%) !important;;
+    }
+}
+
 /* ==================================================================
     TITLES
 ================================================================== */
@@ -170,6 +256,10 @@ h6 {
 
 a.back-to-top i {
     color: var(--grey-color-dark) !important;
+}
+
+.site-footer {
+    font-family: var(--mono-font-family);
 }
 
 .site-footer a {
