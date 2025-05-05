@@ -10,7 +10,7 @@
 
 @@col-12,col-lg-4,profile
 
-\img{"/assets/img/jaydev_kings_college.jpg", class="avatar avatar-circle", alt="{{fill author}}"}
+\img{"/assets/img/jaydev_portrait_pichola.jpg", class="avatar avatar-circle", alt="{{fill author}}"}
 \portrait{
   name="{{fill author}}",
   job="{{fill jobtitle}}",
@@ -42,7 +42,7 @@
 \end{biography}
 
 \shortcv{
-  interests=["Statistical Physics", "Quantum Many-Body Physics", "Computational Physics", "Open Source Scientific Software"],
+  interests=["Statistical Physics", "Quantum Many-Body Physics", "Quantum Simulation", "Computational Physics", "Open Source Scientific Software"],
   education=[
     ("Master of Advance Studies (2023-2024)", "Physics", "University of Cambridge, UK")
     ("Bachelor of Science (2019-2023)", "Electrical Engineering and Computer Science", "IISER Bhopal, India")]

@@ -11,7 +11,7 @@
 <!-- ------------------
       PROJECTS SECTION
      ------------------ -->
-# Research Projects
+# Past Projects
 
 - **\style{color:var(--grey-color-dark)}{Dynamics of quantum traverse field Ising model}** _(Supervised by Prof. Dr. Markus Heyl, Universität Augsburg, Germany)_.
   
