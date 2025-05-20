@@ -1,4 +1,12 @@
 @def title = "My Work | JaydevSR"
+# Current Projects
+
+I am currently working with the (1+1)D Lattice Schwinger model, which is a model of quantum electrodynamics in (1+1) dimensions. We are trying to map this fermionic model to a quantum many-body Hamiltonian which can be simulated on an analog quantum simulator. The goal is to propose an alternative non-perterbative approach to understand the dynamics of this model in the strong coupling regime and to study the phenomenon of string breaking, confinement and their respective quatum phase transitions experimentally.
+
+**References**:
+- A. Lerose, _Simulating Schwinger model dynamics with quasi-one-dimensional qubit arrays_, [arXiv:2409.14544](https://arxiv.org/abs/2409.14544) [quant-ph]
+- J. Kogut and L. Susskind, _Hamiltonian formulation of Wilson’s lattice gauge theories_, [Phys. Rev. D 11, 395](https://link.aps.org/doi/10.1103/PhysRevD.11.395) (1975).
+
 
 <!-- ------------------
       PUBLICATIONS SECTION

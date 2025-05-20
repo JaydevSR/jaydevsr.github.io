@@ -36,9 +36,11 @@
 
   For my formal education, I completed my master's degree in Physics at the University of Cambridge in 2024 after having completed my bachelor's degree in Electrical Engineering and Computer Science from IISER Bhopal in 2023.
 
-  Outside of academic life, I find solace in music, learning languages while dabbling with linguistic nuances, and, often, just procrastinating at practising flute or reading books. I have also recently developed a strong liking to travelling and experience new places and cultures. It's quite possible that I'll be roaming the world in the future, stay tuned for that \*winks uncharacteristically\*. 
+  Outside of academic life, I find solace in music, learning languages while dabbling with linguistic nuances, and, often, just procrastinating at practising flute or reading books. I have also recently developed a strong affinity to travelling and experiencing new places and cultures. It's quite possible that I'll be roaming the world in the future, stay tuned for that \*winks uncharacteristically\*. 
   
-  If you're here, there is a significant probability that you want to contact me. If so, I can be contacted through email at `jaydevsingh.rao[α]kuleuven[∘]be` for work or `jaydevsrao[α]gmail[∘]com` for non-work.
+  If you're here, there is non-zero probability that you want to contact me. If so, I can be contacted through email at `jaydevsingh.rao[α]kuleuven[∘]be` for work or `jaydevsrao[α]gmail[∘]com` for non-work. Alternatively, you can directly schedule a meeting with me using the link below.
+
+  **Schedule a meeting with me**: [reserve a 30 min slot here](https://calendar.notion.so/meet/jaydev/slots)
 \end{biography}
 
 \shortcv{
