@@ -13,7 +13,8 @@ I am currently working with the (1+1)D Lattice Schwinger model, which is a model
      ------------------ -->
 # Publications/Preprints
 
-- R. V. Gavai, B. Mohanty, **J. S. Rao**, S. Saha, _Cumulants and Ordering of Their Ratios in 2D Potts Models: Lessons for QCD?_, [arXiv:2312.12130](http://arxiv.org/abs/2312.12130) [hep-lat]
+- A. Prakash, **J. S. Rao**, S. A. Parameswaran, A. Lerose, _Interface phases and dynamics in two-dimensional quantum magnets: A" holographic" approach from universality to quantum simulation_, [arXiv:2608.12312](https://arxiv.org/abs/2608.12312) (2026).
+- R. V. Gavai, B. Mohanty, **J. S. Rao**, S. Saha, _Finite-size behavior of higher-order cumulant ratios near criticality in two-dimensional Potts models_, [Journal of Physics G: Nuclear and Particle Physics, Volume 53, Number 4](https://iopscience.iop.org/article/10.1088/1361-6471/ae5fb6/meta) (2026).
 
 
 <!-- ------------------
