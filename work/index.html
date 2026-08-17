@@ -9,10 +9,24 @@
 
   <meta name="theme-color" content="#2962ff">
 
+  <!-- Restore a previously-chosen theme before first paint to avoid a
+       light/dark flash on load. Kept inline + tiny so it never blocks
+       on a network request. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link rel=stylesheet href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"  crossorigin=anonymous>
+<link rel=stylesheet href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"  crossorigin=anonymous>
 
 <link rel=stylesheet href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" crossorigin=anonymous>
 
@@ -57,7 +71,7 @@
   <div class=container>
     <!-- Main name -->
     <div class="d-none d-lg-inline-flex">
-      <a class=navbar-brand href="/">Jaydev S. Rao</a>
+      <a class=navbar-brand href="/">Jaydev Singh Rao</a>
     </div>
     <!-- Button for narrow mode -->
     <button type=button class=navbar-toggler data-toggle=collapse data-target=#navbar-content aria-controls=navbar aria-expanded=false aria-label="Toggle navigation">
@@ -65,7 +79,7 @@
     </button>
     <!-- Main name for mobile mode -->
     <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
-      <a class=navbar-brand href="/">Jaydev S. Rao</a>
+      <a class=navbar-brand href="/">Jaydev Singh Rao</a>
     </div>
     <!-- Menu items -->
     <div class="navbar-collapse main-menu-item collapse justify-content-start" id=navbar-content>
@@ -113,59 +127,43 @@
 </ul>
 <h1 id="publicationspreprints"><a href="#publicationspreprints" class="header-anchor">Publications/Preprints</a></h1>
 <ul>
-<li><p>A. Prakash, <strong>J. S. Rao</strong>, S. A. Parameswaran, A. Lerose, <em>Interface phases and dynamics in two-dimensional quantum magnets: A&quot; holographic&quot; approach from universality to quantum simulation</em>, <a href="https://arxiv.org/abs/2608.12312">arXiv:2608.12312</a> &#40;2026&#41;.</p>
+<li><p>A. Prakash, <strong>J. S. Rao</strong>, S. A. Parameswaran, A. Lerose, <em>Interface phases and dynamics in two-dimensional quantum magnets: A&quot; holographic&quot; approach from universality to quantum simulation</em>, <a href="https://arxiv.org/abs/2608.12312">arXiv:2608.12312</a> &#40;2026&#41;. 
+    <template class="abstract-content">
+        We introduce a framework to classify quantum phases, phase transitions, and non-equilibrium dynamics of interfaces separating ordered bulk domains in 2D quantum magnets - equivalently, confining strings in dual lattice gauge theories - based on effective 1D Hamiltonians governing geometric fluctuations. Building on a "holographic" approach from [Phys. Rev. Lett. 129, 120601 (2022)], here reinterpreted as an exact bosonization, we uncover a rich quantum phase structure, with a variety of stiff and rough interface phases described by gapped and gapless 1D ground states, respectively, all distinguishable through the statistics of 2D wave-function snapshots. Our framework allows us to predict distinct spatiotemporal scaling laws for non-equilibrium curvature-driven interface dynamics across parameter space, which can be readily probed in existing experiments. We finally show that our approach enables the unprecedented experimental opportunity of directly measuring charge full counting statistics and symmetry-resolved properties of an encoded 1D system, as we explicitly demonstrate by numerically simulating a neutral-atom array experiment.
+    </template>
+    </p>
 </li>
-<li><p>R. V. Gavai, B. Mohanty, <strong>J. S. Rao</strong>, S. Saha, <em>Finite-size behavior of higher-order cumulant ratios near criticality in two-dimensional Potts models</em>, <a href="https://iopscience.iop.org/article/10.1088/1361-6471/ae5fb6/meta">Journal of Physics G: Nuclear and Particle Physics, Volume 53, Number 4</a> &#40;2026&#41;.</p>
+<li><p>R. V. Gavai, B. Mohanty, <strong>J. S. Rao</strong>, S. Saha, <em>Finite-size behavior of higher-order cumulant ratios near criticality in two-dimensional Potts models</em>, <a href="https://iopscience.iop.org/article/10.1088/1361-6471/ae5fb6/meta">Journal of Physics G: Nuclear and Particle Physics, Volume 53, Number 4</a> &#40;2026&#41;. 
+    <template class="abstract-content">
+        Theoretical considerations predict a specific hierarchy among ratios of net-baryon number cumulants (χn, where n is the order of cumulant) in the vicinity of the transition from the low-temperature hadronic phase to the high temperature quark-gluon plasma phase at small baryon chemical potential, μB, in the QCD phase diagram. This hierarchy, χ6χ2<χ5χ1<χ4χ2<χ3χ1, has been observed by the STAR experiment in net-proton number (a proxy of net-baryon number) cumulant ratios over a broad range of collision energies. Motivated by these findings, we investigate whether similar ordering emerges generically in finite statistical systems undergoing second-order phase transitions. We employ two different spin models: the two-state and three-state Potts models in two dimensions, both exhibiting a transition from an ordered phase to a disordered phase at their respective critical temperatures. Monte Carlo simulations are performed on square lattices of varying sizes using the Wolff cluster algorithm. Cumulants of the total magnetization are calculated up to sixth order in both of these models in a temperature range near their corresponding critical temperatures. Higher-order cumulants exhibit extrema (peaks/troughs) whose magnitudes grow with both cumulant order and lattice size, reflecting enhanced critical fluctuations. Except within a narrow temperature window above the critical temperature, neither the complete hierarchy nor its exact reverse is realized over the studied temperature range in either model.
+    </template>
+    </p>
 </li>
 </ul>
-<h1 id="past_projects"><a href="#past_projects" class="header-anchor">Past Projects</a></h1>
+<details class="pre-phd">
+  <summary><span class="pre-phd-title">Pre PhD</span><i class="fa-solid fa-chevron-down pre-phd-caret" aria-hidden="true"></i></summary>
+  <div class="pre-phd-content"></p>
+<h1 id="projects"><a href="#projects" class="header-anchor">Projects</a></h1>
 <ul>
 <li><p><strong><span style="color:var(--grey-color-dark)">Dynamics of quantum traverse field Ising model</span></strong> <em>&#40;Supervised by Prof. Dr. Markus Heyl, Universität Augsburg, Germany&#41;</em>.</p>
 
-    <div style="
-            border-style: hidden hidden hidden solid;
-            border-image: 
-                linear-gradient(
-                    to bottom, 
-                    var(--tertiary-color), 
-                    rgba(0, 0, 0, 0)
-                ) 1 100%;
-            padding: 1em;
-            margin-top: 0.5em;">
+    <template class="abstract-content">
         In presence of long range interactions among the spins in a traverse-field Ising model, it is not possible to obtain a good analytic description of it's dynamical properties. We aim to use a perturbative renormalization group technique based on the strong-disorder renormalization group (SDRG) to obtain time evolution of spins and their correlators for this model. This has possible applications to understand the entanglement dynamics and glassy behaviour of systems of Rydberg atoms. This project was supported by funding from the DAAD-WISE scholarship programme.
-    </div>
+    </template>
     
 </li>
 <li><p><strong><span style="color:var(--grey-color-dark)">Higher order susceptibilities of the 2D 3-state Potts model</span></strong> <em>&#40;Supervised by Prof. Rajiv V. Gavai, IISER Bhopal, India&#41;</em>.</p>
 
-    <div style="
-            border-style: hidden hidden hidden solid;
-            border-image: 
-                linear-gradient(
-                    to bottom, 
-                    var(--tertiary-color), 
-                    rgba(0, 0, 0, 0)
-                ) 1 100%;
-            padding: 1em;
-            margin-top: 0.5em;">
+    <template class="abstract-content">
         In search of the QCD critical point, higher order baryonic susceptibilities (or cumulants) play a vital role as indicators of crossovers and phase-transitions. In this project we studied such equivalent higher order magnetic susceptiblities for classical spin models, particularly the 2D 3-state Potts model. We obtained scaling exponents of such quantities using finite size scaling theory and performed numerical verification of these results with cluster based Monte-Carlo simulations. We also looked into the ratios of higher order susceptibilites near the second order critical point to gain some qualitative insights about their behavior in critical regions.
-    </div>
+    </template>
     
 </li>
 <li><p><strong><span style="color:var(--grey-color-dark)">Statistics of nearest neighbor distances of the 2D Ising and XY model</span></strong> <em>&#40;Supervised by Prof. Dr. Markus Heyl, Universität Augsburg, Germany&#41;</em>.</p>
 
-    <div style="
-            border-style: hidden hidden hidden solid;
-            border-image: 
-                linear-gradient(
-                    to bottom, 
-                    var(--tertiary-color), 
-                    rgba(0, 0, 0, 0)
-                ) 1 100%;
-            padding: 1em;
-            margin-top: 0.5em;">
+    <template class="abstract-content">
         This was a remote project in which I got to learn about classical spin models and how to generate configurations of such models using Monte-Carlo simulations. I used the Wolff cluster algorithm to study the second order phase transition of the classical 2D Ising model and the Kosterlitz-Thouless transition in the classical 2D XY model. We were also trying to understand the statistics of nearest neighbor distances of the configurations of these models at different temperatures. We obtained some general probabilitic bounds for the averages of such nearest neighbor distances and tried to relate these to the global properties of these models at a particular temperature such as the structure factor.
-    </div>
+    </template>
     
 </li>
 </ul>
@@ -194,6 +192,8 @@
 <li><p><i class="fa fa-microphone-alt"></i>  <em><span class=date>30 October, 2022</span></em>, <strong><span style="color:var(--grey-color-dark)">What is GSoC all about? Plus, my project, experience and tips</span></strong> at <a href="https://www.iiserb.ac.in/">IISER Bhopal</a>, Bhopal, India. &#91;<a href="https://github.com/JaydevSR/GSoC_Interaction_IISERB">Material</a>&#93;</p>
 </li>
 </ul>
+<p>  </div>
+</details>
 
 </div> <!-- article style -->
 
@@ -222,6 +222,8 @@
     
 
     <script src="/assets/scripts/darkmode.js"></script>
+<script src="/assets/scripts/interactions.js"></script>
+<script src="/assets/scripts/abstract-popover.js"></script>
 
   <script src=https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin=anonymous></script>
 
