@@ -9,6 +9,20 @@
 
   <meta name="theme-color" content="#2962ff">
 
+  <!-- Restore a previously-chosen theme before first paint to avoid a
+       light/dark flash on load. Kept inline + tiny so it never blocks
+       on a network request. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   {{insert stylesheets.html}}
 
   <link rel="icon" href="/assets/favicon.ico" />

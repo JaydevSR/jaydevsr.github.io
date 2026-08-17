@@ -1,6 +1,6 @@
 +++
 author = "Jaydev Singh Rao"
-shortauthor = "Jaydev S. Rao"
+shortauthor = "Jaydev Singh Rao"
 jobtitle = "PhD Student"
 affiliation = "Institute for Theoretical Physics, KU Leuven"
 address = "06.09, Celestijnenlaan 200d box 2415,<br/> 3001 Heverlee, Belgium"
@@ -41,17 +41,16 @@ website_url   = "https://jaydevsr.github.io/"
 
 \newcommand{\twosidebox}[1]{
     ~~~
-    <div style="
-            border-style: hidden hidden hidden solid;
-            border-image: 
-                linear-gradient(
-                    to bottom, 
-                    var(--tertiary-color), 
-                    rgba(0, 0, 0, 0)
-                ) 1 100%;
-            padding: 1em;
-            margin-top: 0.5em;">
+    <div class="twosidebox">
         !#1
     </div>
+    ~~~
+}
+
+\newcommand{\abstract}[1]{
+    ~~~
+    <template class="abstract-content">
+        !#1
+    </template>
     ~~~
 }

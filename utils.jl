@@ -46,6 +46,22 @@ end
         """)
 end
 
+# Collapsible drop-down section (native <details>/<summary>, collapsed by
+# default). Wraps a block of markdown content, e.g.:
+#
+#   \begin{prephd}{title="Pre PhD"}
+#   # Projects
+#   ...
+#   \end{prephd}
+@env function prephd(md; title="Pre PhD")
+    return html("""
+        <details class="pre-phd">
+          <summary><span class="pre-phd-title">$title</span><i class="fa-solid fa-chevron-down pre-phd-caret" aria-hidden="true"></i></summary>
+          <div class="pre-phd-content">""") * md * html("""
+          </div>
+        </details>""")
+end
+
 # Insert an image with given class, alt, src
 @lx img(src; class="", alt="") = html("""<img class="$class" src="$src" alt="$alt">""")
 
@@ -72,7 +88,7 @@ end
 
     if !all(isempty, (twitter, gscholar, github, linkedin, orcid))
         write(io, html("<ul class=network-icon aria-hidden=true>"))
-        isempty(twitter) || write(io, html("""<li><a href="$twitter" target=_blank rel=noopener><i class="fab fa-twitter big-icon"></i></a></li>"""))
+        isempty(twitter) || write(io, html("""<li><a href="$twitter" target=_blank rel=noopener><i class="fab fa-x-twitter big-icon"></i></a></li>"""))
         isempty(gscholar) || write(io, html("""<li><a href="$gscholar" target=_blank rel=noopener><i class="fas fa-graduation-cap big-icon"></i></a></li>"""))
         isempty(github) || write(io, html("""<li><a href="$github" target=_blank rel=noopener><i class="fab fa-github big-icon"></i></a></li>"""))
         isempty(linkedin) || write(io, html("""<li><a href="$linkedin" target=_blank rel=noopener><i class="fab fa-linkedin big-icon"></i></a></li>"""))
