@@ -99,6 +99,34 @@ end
     return String(take!(io))
 end
 
+# Small CRT-styled "News" box (see .news-box in mystyles.css), meant to
+# sit under the social icons in the profile column. `items` is a list of
+# (date, text, link) tuples, newest first; `link` may be "" for a
+# plain-text item. Only the first `limit` items are rendered at all - the
+# box itself only shows a handful at a time (fixed height), with the rest
+# reachable by hovering the top/bottom half to auto-scroll (see
+# news-box.js), so `limit` can comfortably be higher than what's visible
+# at once.
+#
+#   \newsbox{
+#     items=[
+#       ("2026-08", "Some update text", "https://example.com")
+#       ("2026-05", "An update with no link", "")],
+#     limit=7
+#   }
+@lx function newsbox(; items=nothing, limit=7)
+    io = IOBuffer()
+    write(io, html("""<div class=news-box><div class=news-box-heading>News</div><ul class=news-list>"""))
+    if !isnothing(items)
+        for (date, text, link) in items[1:min(limit, length(items))]
+            entry = isempty(link) ? text : """<a href="$link" target=_blank rel=noopener>$text</a>"""
+            write(io, html("""<li><span class=news-date>$date</span>$entry</li>"""))
+        end
+    end
+    write(io, html("""</ul></div>"""))
+    return String(take!(io))
+end
+
 # Biography block with optional resume link
 @env function biography(md; resume="")
     io = IOBuffer()

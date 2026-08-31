@@ -24,6 +24,13 @@
   linkedin="{{fill linkedin_user}}",
   orcid="{{fill orcid_link}}"
 }
+
+\newsbox{
+  items=[
+    ("12 Aug 2026", "New preprint: <em>Interface phases and dynamics in two-dimensional quantum magnets</em>", "https://arxiv.org/abs/2608.12312")
+    ("15 Apr 2026", "Paper accepted in <em>J. Phys. G</em>: <em>Finite-size behavior of higher-order cumulant ratios near criticality in 2D Potts models</em>", "https://iopscience.iop.org/article/10.1088/1361-6471/ae5fb6/meta")],
+  limit=7
+}
 @@ <!-- end of column -->
 
 <!-- RIGHT COLUMN -->
