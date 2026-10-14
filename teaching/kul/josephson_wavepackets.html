@@ -228,7 +228,7 @@ const wrap = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
 const $ = id => document.getElementById(id);
 
 /* ---------- parameters ---------- */
-const P = { x0: 0, k0: 2, hbar: 0.03, w: 1, speed: 1, tMax: 10, centre: 0,
+const P = { x0: 0, k0: 2, hbar: 0.03, w: 1, speed: 1, tMax: 8, centre: 0,
             hus: true, ell: true, swarm: false };
 const PRESETS = {
   osc: { x0: 0, k0: Math.sqrt(0.8), centre: 0 },
