@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Josephson Wave Packets</title>
+<meta name="description" content="Interactive simulation of a Gaussian wave packet in the quantum pendulum (Josephson) Hamiltonian: exact Schrödinger evolution, Husimi phase-space density and the semiclassical covariance ellipse.">
+<style>
+/* Layout: lab-instrument panel. Controls column on the left, three live plots on the right
+   (position space | phase space, width-vs-time below). Stacks to one column on phones. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #1a1d23;
+  --muted: #5b6270;
+  --rule: #d8dce4;
+  --pot: #4b505b;
+  --accent: #2b4c7e;
+  --osc: #2266c4;
+  --sep: #d4471c;
+  --rot: #129067;
+  --focus: #2b4c7e;
+  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-data: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+    --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+    --focus: #8fb0e6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+  --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+  --focus: #8fb0e6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lead { margin: 2px 0 0; max-width: 68ch; color: var(--muted); }
+.m { font-family: var(--font-display); font-style: italic; }
+.mu { font-family: var(--font-display); }
+
+.app { display: grid; grid-template-columns: 17.5rem minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .viz { order: -1; } }
+
+/* controls */
+.controls { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 16px; display: grid; gap: 16px; }
+.group { display: grid; gap: 10px; }
+.group h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets button { display: grid; gap: 1px; text-align: left; }
+.presets button small { color: var(--muted); font-size: 11.5px; font-family: var(--font-data); }
+.presets button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+button {
+  font: inherit; font-size: 14px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 7px; padding: 7px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { display: grid; gap: 2px; }
+.slider label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.slider output { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--fg); }
+.slider .hint { font-size: 12px; color: var(--muted); margin: 0; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--fg); vertical-align: middle; }
+.swatch.dash { border-top-style: dashed; }
+
+/* toolbar */
+.viz { display: grid; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.toolbar .btns { display: flex; gap: 8px; }
+.toolbar .primary { background: var(--fg); color: var(--bg); border-color: var(--fg); min-width: 5.5em; }
+.readouts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; align-items: baseline; }
+.readouts .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 1px 9px 2px; border-radius: 999px; border: 1px solid currentColor; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+.plots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 680px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px 8px; display: grid; gap: 4px; min-width: 0; }
+.panel.wide { grid-column: 1 / -1; }
+.panel header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.panel h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.panel .key { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+canvas { display: block; width: 100%; max-width: 100%; }
+#cvPos { aspect-ratio: 4 / 3; }
+#cvPhase { aspect-ratio: 4 / 3; }
+#cvWidth { aspect-ratio: 16 / 4.6; }
+@media (max-width: 680px) { #cvWidth { aspect-ratio: 16 / 7; } }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 22px; font-size: 14px; color: var(--muted); }
+.notes p { margin: 0; max-width: 62ch; }
+.notes strong { color: var(--fg); font-weight: 600; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+footer p { margin: 0 0 4px; max-width: 100ch; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Advanced Quantum Mechanics · Tutorial 2b</p>
+    <h1>Wave packets in the quantum pendulum</h1>
+    <p class="lead">A Gaussian packet in <span class="m">V</span><span class="mu">(</span><span class="m">q</span><span class="mu">) = −</span><span class="m">λ</span> <span class="mu">cos</span> <span class="m">q</span>, evolved exactly with the Schrödinger equation and compared with the semiclassical picture: the classical trajectory carrying a covariance ellipse. Pick an energy regime, then vary the packet and see when the ellipse stops describing it.</p>
+  </header>
+
+  <div class="app">
+    <aside class="controls" aria-label="Simulation controls">
+      <section class="group">
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Initial condition presets">
+          <button type="button" id="pOsc" data-preset="osc" aria-pressed="false">Oscillation<small>E = −0.6 λ</small></button>
+          <button type="button" id="pSep" data-preset="sep" aria-pressed="true">Separatrix<small>E = λ</small></button>
+          <button type="button" id="pRot" data-preset="rot" aria-pressed="false">Rotation<small>E = 3 λ</small></button>
+          <button type="button" id="pTop" data-preset="top" aria-pressed="false">Hilltop<small>q = π, p = 0</small></button>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Initial packet centre</h2>
+        <div class="slider">
+          <label for="x0"><span>Angle <span class="m">x</span><sub>0</sub></span><output id="x0v" for="x0"></output></label>
+          <input type="range" id="x0" min="-3.1416" max="3.1416" step="0.01" value="0">
+        </div>
+        <div class="slider">
+          <label for="k0"><span>Momentum <span class="m">k</span><sub>0</sub></span><output id="k0v" for="k0"></output></label>
+          <input type="range" id="k0" min="-3.5" max="3.5" step="0.01" value="2">
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Quantum scales</h2>
+        <div class="slider">
+          <label for="hb"><span>Planck constant <span class="m">ħ</span></span><output id="hbv" for="hb"></output></label>
+          <input type="range" id="hb" min="0" max="1" step="0.001" value="0.3667">
+          <p class="hint">in units of √(<span class="m">mλ</span>); smaller is more classical</p>
+        </div>
+        <div class="slider">
+          <label for="ww"><span>Packet shape <span class="m">w</span></span><output id="wwv" for="ww"></output></label>
+          <input type="range" id="ww" min="0" max="1" step="0.001" value="0.5">
+          <p class="hint" id="wHint">Δ<sub>qq</sub>(0) = ħw/2, Δ<sub>pp</sub>(0) = ħ/2w</p>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Show</h2>
+        <label class="check"><input type="checkbox" id="lHus" checked> Husimi density (exact)</label>
+        <label class="check"><input type="checkbox" id="lEll" checked> Semiclassical ellipse</label>
+        <label class="check"><input type="checkbox" id="lSwarm"> Classical swarm</label>
+        <label class="check"><input type="checkbox" id="lTop"> Centre plots on the hilltop</label>
+      </section>
+
+      <section class="group">
+        <h2>Playback</h2>
+        <div class="slider">
+          <label for="sp">Speed<output id="spv" for="sp"></output></label>
+          <input type="range" id="sp" min="0" max="1" step="0.001" value="0.5">
+          <p class="hint">each run lasts until <span class="m">t</span> = 10, then repeats</p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="viz">
+      <div class="toolbar">
+        <div class="btns">
+          <button type="button" class="primary" id="play">Pause</button>
+          <button type="button" id="restart">Restart</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <span><span class="m">t</span> = <span class="num" id="rT">0.00</span></span>
+          <span><span class="m">E</span> = <span class="num" id="rE">1.000</span> <span class="m">λ</span></span>
+          <span class="chip" id="rReg">separatrix</span>
+          <span title="Exact quantum energy and its spread">⟨<span class="m">Ĥ</span>⟩ = <span class="num" id="rH">—</span> ± <span class="num" id="rdH">—</span></span>
+        </div>
+      </div>
+
+      <div class="plots">
+        <figure class="panel" style="margin:0">
+          <header><h3>Position space</h3><div class="key"><span>|ψ(<span class="m">q</span>,<span class="m">t</span>)|² on its energy level</span><span>● classical particle</span></div></header>
+          <canvas id="cvPos" role="img" aria-label="Probability density of the wave packet drawn over the cosine potential"></canvas>
+        </figure>
+        <figure class="panel" style="margin:0">
+          <header><h3>Phase space</h3><div class="key"><span><span class="swatch"></span> 1σ</span><span><span class="swatch dash"></span> 2σ ellipse</span><span>shading: Husimi</span></div></header>
+          <canvas id="cvPhase" role="img" aria-label="Phase space with classical orbits, the Husimi density and the semiclassical covariance ellipse"></canvas>
+        </figure>
+        <figure class="panel wide" style="margin:0">
+          <header><h3>Angular width</h3><div class="key"><span><span class="swatch" id="swEx"></span> exact σ<sub>q</sub></span><span><span class="swatch dash"></span> semiclassical √Δ<sub>qq</sub></span><span>log scale</span></div></header>
+          <canvas id="cvWidth" role="img" aria-label="Angular width of the packet against time, exact and semiclassical"></canvas>
+        </figure>
+      </div>
+    </main>
+  </div>
+
+  <section class="notes" aria-label="How to read the plots">
+    <p><strong>Position space.</strong> The density |ψ|² sits on the line <span class="m">E</span> = <span class="m">H</span>(<span class="m">x</span><sub>0</sub>, <span class="m">k</span><sub>0</sub>) above the potential; dotted parts of that line are classically forbidden. The two ends of the axis are the same point of the ring.</p>
+    <p><strong>Phase space.</strong> Grey lines are classical orbits and the coloured curve is the separatrix. The shading is the exact Husimi function, the quantum state smoothed over one coherent-state cell, so it always looks a little wider than the ellipse.</p>
+    <p><strong>Ellipse.</strong> The covariance Δ(<span class="m">t</span>) from the linearized equations, carried by the classical trajectory. The classical swarm shows the full nonlinear classical flow of the same initial Gaussian.</p>
+  </section>
+
+  <footer>
+    <p>Scaled units <span class="m">m</span> = <span class="m">λ</span> = 1: momenta in units of √(<span class="m">mλ</span>), time in units of √(<span class="m">m</span>/<span class="m">λ</span>), <span class="m">w</span> in units of 1/√(<span class="m">mλ</span>). The width σ<sub>q</sub> is measured in a local angular coordinate around the packet's mean angle.</p>
+    <p>Numerics: split-step Fourier evolution on the ring (<span id="rN">512</span> grid points, Δ<span class="m">t</span> = 0.005) of a periodized Gaussian; classical and semiclassical equations by fourth-order Runge–Kutta.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const TAU = 2 * Math.PI, PI = Math.PI;
+const DT = 0.005;
+const wrap = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
+const $ = id => document.getElementById(id);
+
+/* ---------- parameters ---------- */
+const P = { x0: 0, k0: 2, hbar: 0.03, w: 1, speed: 1, tMax: 10, centre: 0,
+            hus: true, ell: true, swarm: false };
+const PRESETS = {
+  osc: { x0: 0, k0: Math.sqrt(0.8), centre: 0 },
+  sep: { x0: 0, k0: 2, centre: 0 },
+  rot: { x0: 0, k0: Math.sqrt(8), centre: 0 },
+  top: { x0: PI, k0: 0, centre: PI },
+};
+const hbFromU = u => 0.01 * Math.pow(20, u);
+const wFromU = u => 0.25 * Math.pow(16, u);
+const spFromU = u => 0.25 * Math.pow(16, u);
+const uFromHb = h => Math.log(h / 0.01) / Math.log(20);
+const energy = (x, k) => 0.5 * k * k - Math.cos(x);
+
+/* ---------- FFT (iterative radix-2, in place) ---------- */
+function makeFFT(N) {
+  const rev = new Uint32Array(N), bits = Math.round(Math.log2(N));
+  for (let i = 0; i < N; i++) { let r = 0, x = i; for (let b = 0; b < bits; b++) { r = (r << 1) | (x & 1); x >>= 1; } rev[i] = r; }
+  const cs = new Float64Array(N / 2), sn = new Float64Array(N / 2);
+  for (let i = 0; i < N / 2; i++) { cs[i] = Math.cos(TAU * i / N); sn[i] = Math.sin(TAU * i / N); }
+  return function fft(re, im, inverse) {
+    for (let i = 0; i < N; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    const sg = inverse ? 1 : -1;
+    for (let size = 2; size <= N; size <<= 1) {
+      const half = size >> 1, step = N / size;
+      for (let i = 0; i < N; i += size) {
+        for (let j = i, k = 0; j < i + half; j++, k += step) {
+          const l = j + half, wr = cs[k], wi = sg * sn[k];
+          const tr = re[l] * wr - im[l] * wi, ti = re[l] * wi + im[l] * wr;
+          re[l] = re[j] - tr; im[l] = im[j] - ti; re[j] += tr; im[j] += ti;
+        }
+      }
+    }
+    if (inverse) { const s = 1 / N; for (let i = 0; i < N; i++) { re[i] *= s; im[i] *= s; } }
+  };
+}
+
+/* ---------- simulation state ---------- */
+let S = null;
+function nextPow2(n) { let p = 256; while (p < n) p <<= 1; return Math.min(p, 4096); }
+
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return (seed + 0.5) / 4294967296; }; }
+
+function setup() {
+  const { x0, k0, hbar, w } = P;
+  const E = energy(x0, k0);
+  const sq = Math.sqrt(hbar * w / 2), sp = Math.sqrt(hbar / (2 * w));
+  const pBox = Math.max(2.6, 1.15 * Math.sqrt(2 * (Math.max(E, 1) + 1)), Math.abs(k0) + 4 * sp);
+  const N = nextPow2(Math.max(2.6 * pBox / hbar + 64, 10 * PI / sq));
+  const dq = TAU / N;
+  const q = new Float64Array(N), V = new Float64Array(N);
+  for (let j = 0; j < N; j++) { q[j] = -PI + j * dq; V[j] = -Math.cos(q[j]); }
+  const re = new Float64Array(N), im = new Float64Array(N);
+  for (let j = 0; j < N; j++) {
+    let ar = 0, ai = 0;
+    for (let c = -2; c <= 2; c++) {
+      const d = q[j] - x0 + TAU * c;
+      const a = Math.exp(-d * d / (2 * hbar * w)), ph = k0 * d / hbar;
+      ar += a * Math.cos(ph); ai += a * Math.sin(ph);
+    }
+    re[j] = ar; im[j] = ai;
+  }
+  let nrm = 0; for (let j = 0; j < N; j++) nrm += re[j] * re[j] + im[j] * im[j];
+  nrm = 1 / Math.sqrt(nrm * dq); for (let j = 0; j < N; j++) { re[j] *= nrm; im[j] *= nrm; }
+  const n = new Float64Array(N); for (let k = 0; k < N; k++) n[k] = k < N / 2 ? k : k - N;
+  const kr = new Float64Array(N), ki = new Float64Array(N), vr = new Float64Array(N), vi = new Float64Array(N);
+  for (let k = 0; k < N; k++) { const ph = -hbar * n[k] * n[k] * DT / 2; kr[k] = Math.cos(ph); ki[k] = Math.sin(ph); }
+  for (let j = 0; j < N; j++) { const ph = -V[j] * DT / (2 * hbar); vr[j] = Math.cos(ph); vi[j] = Math.sin(ph); }
+  const fft = makeFFT(N);
+  // exact energy and spread at t = 0
+  const ar = Float64Array.from(re), ai = Float64Array.from(im);
+  fft(ar, ai, false);
+  for (let k = 0; k < N; k++) { const T = 0.5 * hbar * hbar * n[k] * n[k]; ar[k] *= T; ai[k] *= T; }
+  fft(ar, ai, true);
+  let H1 = 0, H2 = 0;
+  for (let j = 0; j < N; j++) {
+    const hr = ar[j] + V[j] * re[j], hi = ai[j] + V[j] * im[j];
+    H1 += re[j] * hr + im[j] * hi; H2 += hr * hr + hi * hi;
+  }
+  H1 *= dq; H2 *= dq;
+  // classical swarm sampled from the same Gaussian
+  const M = 700, sx = new Float64Array(M), sk = new Float64Array(M), r = rng(12345);
+  for (let i = 0; i < M; i++) {
+    const u1 = r(), u2 = r(), rad = Math.sqrt(-2 * Math.log(u1));
+    sx[i] = x0 + sq * rad * Math.cos(TAU * u2); sk[i] = k0 + sp * rad * Math.sin(TAU * u2);
+  }
+  S = { N, dq, q, V, re, im, kr, ki, vr, vi, fft, n, t: 0, E, H1, dH: Math.sqrt(Math.max(H2 - H1 * H1, 0)),
+        pBox, sq, sp, y: [x0, k0, sq * sq, 0, sp * sp], sx, sk,
+        hist: [], husImg: null, husDirty: true, frame: 0 };
+  S.hist.push([0, sq, sq]);
+  $("rN").textContent = N;
+  updateReadouts(true);
+}
+
+function stepQuantum() {
+  const { N, re, im, kr, ki, vr, vi, fft } = S;
+  for (let j = 0; j < N; j++) { const a = re[j], b = im[j]; re[j] = a * vr[j] - b * vi[j]; im[j] = a * vi[j] + b * vr[j]; }
+  fft(re, im, false);
+  for (let k = 0; k < N; k++) { const a = re[k], b = im[k]; re[k] = a * kr[k] - b * ki[k]; im[k] = a * ki[k] + b * kr[k]; }
+  fft(re, im, true);
+  for (let j = 0; j < N; j++) { const a = re[j], b = im[j]; re[j] = a * vr[j] - b * vi[j]; im[j] = a * vi[j] + b * vr[j]; }
+}
+// classical centre + linearized covariance (m = lambda = 1)
+function deriv(y) {
+  const [x, k, qq, qp, pp] = y, c = Math.cos(x);
+  return [k, -Math.sin(x), 2 * qp, pp - c * qq, -2 * c * qp];
+}
+function stepClassical() {
+  const y = S.y, h = DT;
+  const k1 = deriv(y);
+  const k2 = deriv(y.map((v, i) => v + 0.5 * h * k1[i]));
+  const k3 = deriv(y.map((v, i) => v + 0.5 * h * k2[i]));
+  const k4 = deriv(y.map((v, i) => v + h * k3[i]));
+  for (let i = 0; i < 5; i++) y[i] += h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+  const { sx, sk } = S;
+  for (let i = 0; i < sx.length; i++) {           // leapfrog for the swarm
+    sk[i] -= 0.5 * h * Math.sin(sx[i]); sx[i] += h * sk[i]; sk[i] -= 0.5 * h * Math.sin(sx[i]);
+  }
+}
+function advance(nsteps) {
+  for (let s = 0; s < nsteps; s++) { stepQuantum(); stepClassical(); S.t += DT; }
+  if (nsteps > 0) {
+    const st = stats();
+    S.hist.push([S.t, st.sd, Math.sqrt(Math.max(S.y[2], 0))]);
+    if (S.hist.length > 20000) S.hist.splice(0, 5000);
+    S.husDirty = true;
+  }
+}
+function stats() {
+  const { N, re, im, q, dq } = S;
+  let c = 0, s = 0;
+  for (let j = 0; j < N; j++) { const r = re[j] * re[j] + im[j] * im[j]; c += r * Math.cos(q[j]); s += r * Math.sin(q[j]); }
+  const phi = Math.atan2(s, c);
+  let v = 0;
+  for (let j = 0; j < N; j++) { const r = re[j] * re[j] + im[j] * im[j], d = wrap(q[j] - phi); v += r * d * d; }
+  return { mean: phi, sd: Math.sqrt(v * dq) };
+}
+
+/* ---------- Husimi function on the displayed window ---------- */
+const MQ = 128;
+let hb = null;
+function computeHusimi() {
+  const { N, re, im, fft, pBox } = S, hbar = P.hbar, w = P.w;
+  const nP = Math.ceil(pBox / hbar), rows = 2 * nP + 1;
+  if (!hb || hb.N !== N || hb.rows !== rows) {
+    hb = { N, rows, fr: new Float64Array(N), fi: new Float64Array(N), Q: new Float32Array(MQ * rows) };
+  }
+  const { fr, fi, Q } = hb, cut = 6 * Math.sqrt(hbar * w), inv = 1 / (2 * hbar * w);
+  let qmax = 0;
+  for (let i = 0; i < MQ; i++) {
+    const q0 = P.centre - PI + (i + 0.5) * TAU / MQ;
+    for (let j = 0; j < N; j++) {
+      const d = wrap(S.q[j] - q0);
+      if (Math.abs(d) < cut) { const g = Math.exp(-d * d * inv); fr[j] = re[j] * g; fi[j] = im[j] * g; }
+      else { fr[j] = 0; fi[j] = 0; }
+    }
+    fft(fr, fi, false);
+    for (let r = 0; r < rows; r++) {
+      const nn = nP - r, k = nn >= 0 ? nn : nn + N;
+      const v = fr[k] * fr[k] + fi[k] * fi[k];
+      Q[r * MQ + i] = v; if (v > qmax) qmax = v;
+    }
+  }
+  hb.qmax = qmax;
+  S.husDirty = false;
+}
+
+/* ---------- drawing helpers ---------- */
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = { fg: g("--fg"), muted: g("--muted"), rule: g("--rule"), pot: g("--pot"), surface: g("--surface"),
+        osc: g("--osc"), sep: g("--sep"), rot: g("--rot") };
+  BODYFONT = getComputedStyle(document.body).fontFamily;
+}
+function hexToRgb(h) { const m = h.replace("#", ""); const v = parseInt(m.length === 3 ? m.split("").map(c => c + c).join("") : m, 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+function regime(E) { return Math.abs(E - 1) < 0.02 ? "sep" : (E < 1 ? "osc" : "rot"); }
+const REG_LABEL = { osc: "oscillation", sep: "separatrix", rot: "rotation" };
+function regColor() { return C[regime(S.E)]; }
+function rgba(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+
+function prepCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, r.width, r.height);
+  return { ctx, w: r.width, h: r.height };
+}
+let BODYFONT = "sans-serif";
+const FONT = (s) => `${s}px ${BODYFONT}`;
+const MFONT = (s) => `italic ${s}px "Iowan Old Style", Charter, Cambria, Georgia, serif`;
+
+function qTicks() {
+  const c = P.centre;
+  const labs = c === 0 ? ["−π", "−π/2", "0", "π/2", "π"] : ["0", "π/2", "π", "3π/2", "2π"];
+  return [-PI, -PI / 2, 0, PI / 2, PI].map((d, i) => [c + d, labs[i]]);
+}
+function frame(ctx, box, xr, yr, xt, yt, xlab, ylab) {
+  const X = v => box.l + (v - xr[0]) / (xr[1] - xr[0]) * box.w;
+  const Y = v => box.t + (1 - (v - yr[0]) / (yr[1] - yr[0])) * box.h;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, box.t + box.h); ctx.lineTo(box.l + box.w, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const [v, s] of xt) { const x = X(v); ctx.beginPath(); ctx.moveTo(x, box.t + box.h); ctx.lineTo(x, box.t + box.h + 4); ctx.stroke(); ctx.fillText(s, x, box.t + box.h + 6); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const [v, s] of yt) { const y = Y(v); ctx.beginPath(); ctx.moveTo(box.l - 4, y); ctx.lineTo(box.l, y); ctx.stroke(); ctx.fillText(s, box.l - 6, y); }
+  ctx.fillStyle = C.muted; ctx.font = MFONT(13); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText(xlab, box.l + box.w / 2, box.t + box.h + 36);
+  ctx.save(); ctx.translate(13, box.t + box.h / 2); ctx.rotate(-PI / 2); ctx.textBaseline = "middle"; ctx.fillText(ylab, 0, 0); ctx.restore();
+  return { X, Y };
+}
+
+/* ---------- position space ---------- */
+let rho0max = 1;
+function drawPos() {
+  const { ctx, w, h } = prepCanvas($("cvPos"));
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 };
+  const E = S.E, top = Math.max(1.6, E + 1.15), yr = [-1.35, top];
+  const xr = [P.centre - PI, P.centre + PI];
+  const yt = []; for (let v = -1; v <= top; v++) yt.push([v, v < 0 ? "−" + Math.abs(v) : String(v)]);
+  const { X, Y } = frame(ctx, box, xr, yr, qTicks(), yt, "q", "energy / λ");
+  const col = regColor();
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 2, box.w, box.h + 2); ctx.clip();
+  // potential
+  ctx.strokeStyle = C.pot; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let i = 0; i <= 240; i++) { const x = xr[0] + i / 240 * TAU; const y = -Math.cos(x); i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)); }
+  ctx.stroke();
+  // energy level: solid where allowed, dotted where forbidden
+  const nL = 360;
+  for (const allowed of [true, false]) {
+    ctx.strokeStyle = col; ctx.lineWidth = allowed ? 1.2 : 1; ctx.setLineDash(allowed ? [] : [1.5, 3.5]);
+    ctx.beginPath(); let on = false;
+    for (let i = 0; i <= nL; i++) {
+      const x = xr[0] + i / nL * TAU, ok = (E >= -Math.cos(x) - 1e-9) === allowed;
+      if (ok) { on ? ctx.lineTo(X(x), Y(E)) : ctx.moveTo(X(x), Y(E)); on = true; } else on = false;
+    }
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // packet
+  const { N, re, im, dq } = S, j0 = ((Math.round((P.centre) / dq) % N) + N) % N;
+  const scale = 0.95 / rho0max;
+  ctx.beginPath(); ctx.moveTo(X(xr[0]), Y(E));
+  for (let i = 0; i <= N; i++) {
+    const j = (j0 + i) % N, r = re[j] * re[j] + im[j] * im[j];
+    ctx.lineTo(X(xr[0] + i * dq), Y(E + scale * r));
+  }
+  ctx.lineTo(X(xr[1]), Y(E)); ctx.closePath();
+  ctx.fillStyle = rgba(col, 0.22); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const j = (j0 + i) % N, r = re[j] * re[j] + im[j] * im[j];
+    const px = X(xr[0] + i * dq), py = Y(E + scale * r); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.stroke();
+  // classical particle
+  const xc = P.centre + wrap(S.y[0] - P.centre);
+  ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(X(xc), Y(E), 3.6, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = C.pot; ctx.font = MFONT(13); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  if (P.centre === 0) { ctx.textAlign = "right"; const lx = -0.72 * PI; ctx.fillText("V(q)", X(lx) - 8, Y(-Math.cos(lx)) + 8); }
+  else { ctx.textAlign = "left"; const lx = 0.25 * PI; ctx.fillText("V(q)", X(lx) + 10, Y(-Math.cos(lx)) + 12); }
+}
+
+/* ---------- phase space ---------- */
+let husCanvas = document.createElement("canvas");
+function drawPhase() {
+  const { ctx, w, h } = prepCanvas($("cvPhase"));
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 };
+  const pb = S.pBox, xr = [P.centre - PI, P.centre + PI], yr = [-pb, pb];
+  const yt = []; for (let v = -Math.floor(pb); v <= pb; v++) yt.push([v, v < 0 ? "−" + Math.abs(v) : String(v)]);
+  const { X, Y } = frame(ctx, box, xr, yr, qTicks(), yt, "q", "p");
+  const col = regColor();
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  // Husimi image
+  if (P.hus) {
+    if (!hb || (S.husDirty && (S.N < 2048 || (S.frame++ & 1) === 0))) computeHusimi();
+    const rows = hb.rows; husCanvas.width = MQ; husCanvas.height = rows;
+    const hctx = husCanvas.getContext("2d"), img = hctx.createImageData(MQ, rows), [r, g, b] = hexToRgb(col);
+    const inv = 1 / (hb.qmax || 1);
+    for (let k = 0; k < MQ * rows; k++) {
+      const a = Math.pow(hb.Q[k] * inv, 0.6);
+      img.data[4 * k] = r; img.data[4 * k + 1] = g; img.data[4 * k + 2] = b; img.data[4 * k + 3] = Math.round(235 * a);
+    }
+    hctx.putImageData(img, 0, 0);
+    const nP = (rows - 1) / 2, yTop = Y(nP * P.hbar + P.hbar / 2), yBot = Y(-nP * P.hbar - P.hbar / 2);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(husCanvas, X(xr[0]), yTop, X(xr[1]) - X(xr[0]), yBot - yTop);
+  }
+  // classical orbits
+  const levels = [-0.8, -0.5, -0.2, 0.2, 0.5, 0.8, 1.5, 2.2, 3.0, 4.0, 5.2, 6.5];
+  const drawLevel = (Ev, stroke, lw, dash) => {
+    ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+    for (const sgn of [1, -1]) {
+      ctx.beginPath(); let on = false;
+      for (let i = 0; i <= 480; i++) {
+        const x = xr[0] + i / 480 * TAU, s = 2 * (Ev + Math.cos(x));
+        if (s >= 0) { const y = Y(sgn * Math.sqrt(s)); on ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); on = true; } else on = false;
+      }
+      ctx.stroke();
+    }
+  };
+  for (const Ev of levels) drawLevel(Ev, rgba(C.pot, 0.35), 0.8);
+  drawLevel(1, C.sep, 1.3);
+  ctx.setLineDash([]);
+  // classical swarm
+  if (P.swarm) {
+    ctx.fillStyle = rgba(C.fg, 0.5);
+    const { sx, sk } = S;
+    for (let i = 0; i < sx.length; i++) { const x = P.centre + wrap(sx[i] - P.centre); ctx.fillRect(X(x) - 0.9, Y(sk[i]) - 0.9, 1.8, 1.8); }
+  }
+  // semiclassical ellipse (drawn at the wrapped centre and its periodic images)
+  const [xc0, kc, qq, qp, pp] = S.y, xc = P.centre + wrap(xc0 - P.centre);
+  if (P.ell) {
+    const a = Math.sqrt(Math.max(qq, 1e-12)), c = qp / a, d = Math.sqrt(Math.max(pp - c * c, 0));
+    for (const [ns, dash, lw] of [[1, [], 1.8], [2, [5, 4], 1.2]]) {
+      ctx.strokeStyle = C.fg; ctx.lineWidth = lw; ctx.setLineDash(dash);
+      for (const shift of [-TAU, 0, TAU]) {
+        ctx.beginPath();
+        for (let i = 0; i <= 120; i++) {
+          const th = i / 120 * TAU, u = Math.cos(th) * ns, v = Math.sin(th) * ns;
+          const x = xc + shift + a * u, y = kc + c * u + d * v;
+          i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y));
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+  }
+  ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(X(xc), Y(kc), 3.2, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- width vs time ---------- */
+function drawWidth() {
+  const { ctx, w, h } = prepCanvas($("cvWidth"));
+  const box = { l: 44, t: 8, w: w - 56, h: h - 46 };
+  const t0 = 0, t1 = P.tMax, tstep = t1 <= 12 ? 2 : (t1 <= 24 ? 4 : 5);
+  const lo = -2, hi = Math.log10(5);
+  const xt = []; for (let v = 0; v <= t1 + 1e-9; v += tstep) xt.push([v, String(v)]);
+  const yt = [[-2, "0.01"], [Math.log10(0.03), "0.03"], [-1, "0.1"], [Math.log10(0.3), "0.3"], [0, "1"], [Math.log10(3), "3"]];
+  const { X, Y } = frame(ctx, box, [t0, t1], [lo, hi], xt, yt, "t", "σ");
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  for (const [v] of yt) { ctx.beginPath(); ctx.moveTo(box.l, Y(v)); ctx.lineTo(box.l + box.w, Y(v)); ctx.stroke(); }
+  ctx.strokeStyle = C.muted; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(box.l, Y(0)); ctx.lineTo(box.l + box.w, Y(0)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+  ctx.fillText("σ = 1: no longer localized", box.l + 6, Y(0) - 2);
+  const H = S.hist, L = v => Math.log10(Math.max(v, 1e-3));
+  const line = (idx, stroke, lw, dash) => {
+    ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.setLineDash(dash); ctx.beginPath(); let on = false;
+    for (let i = 0; i < H.length; i++) { if (H[i][0] < t0 - 0.1) continue; const x = X(H[i][0]), y = Y(Math.min(L(H[i][idx]), hi + 0.3)); on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  line(1, regColor(), 2.4, []);
+  line(2, C.fg, 1.4, [5, 4]);
+  ctx.restore();
+}
+
+/* ---------- UI ---------- */
+function fmt(v, d) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(d); }
+let lastRead = 0;
+function updateReadouts(force) {
+  const now = performance.now(); if (!force && now - lastRead < 120) return; lastRead = now;
+  $("rT").textContent = S.t.toFixed(2) + " / " + P.tMax;
+  $("rE").textContent = fmt(S.E, 3);
+  const reg = regime(S.E), chip = $("rReg");
+  chip.textContent = REG_LABEL[reg]; chip.style.color = C[reg] || "";
+  $("rH").textContent = fmt(S.H1, 3); $("rdH").textContent = S.dH.toFixed(3);
+  $("swEx").style.borderTopColor = C[reg] || "";
+}
+function syncInputs() {
+  $("x0").value = P.x0; $("k0").value = P.k0;
+  $("hb").value = uFromHb(P.hbar); $("ww").value = Math.log(P.w / 0.25) / Math.log(16);
+  $("sp").value = Math.log(P.speed / 0.25) / Math.log(16);
+  $("lTop").checked = P.centre !== 0;
+  labels();
+}
+function labels() {
+  $("x0v").textContent = fmt(P.x0, 2); $("k0v").textContent = fmt(P.k0, 2);
+  $("hbv").textContent = P.hbar < 0.1 ? P.hbar.toFixed(3) : P.hbar.toFixed(2);
+  $("wwv").textContent = P.w.toFixed(2);
+  $("spv").textContent = P.speed.toFixed(2) + "×";
+  const sq = Math.sqrt(P.hbar * P.w / 2), sp = Math.sqrt(P.hbar / (2 * P.w));
+  $("wHint").innerHTML = `σ<sub>q</sub>(0) = ${sq.toFixed(3)}, σ<sub>p</sub>(0) = ${sp.toFixed(3)}${Math.abs(P.w - 1) < 0.02 ? " · matched to small oscillations" : ""}`;
+}
+function markPreset(key) {
+  for (const b of document.querySelectorAll(".presets button")) b.setAttribute("aria-pressed", String(b.dataset.preset === key));
+}
+function restart() {
+  setup(); hb = null;
+  rho0max = 0; for (let j = 0; j < S.N; j++) rho0max = Math.max(rho0max, S.re[j] * S.re[j] + S.im[j] * S.im[j]);
+  drawAll();
+}
+function drawAll() { drawPos(); drawPhase(); drawWidth(); updateReadouts(); }
+
+for (const b of document.querySelectorAll(".presets button")) {
+  b.addEventListener("click", () => {
+    const pr = PRESETS[b.dataset.preset];
+    P.x0 = pr.x0; P.k0 = pr.k0; P.centre = pr.centre;
+    markPreset(b.dataset.preset); syncInputs(); restart();
+  });
+}
+const onParam = () => {
+  P.x0 = +$("x0").value; P.k0 = +$("k0").value;
+  P.hbar = hbFromU(+$("hb").value); P.w = wFromU(+$("ww").value);
+  markPreset(null); labels(); restart();
+};
+for (const id of ["x0", "k0", "hb", "ww"]) $(id).addEventListener("input", onParam);
+$("sp").addEventListener("input", () => { P.speed = spFromU(+$("sp").value); labels(); });
+$("lHus").addEventListener("change", e => { P.hus = e.target.checked; S.husDirty = true; drawAll(); });
+$("lEll").addEventListener("change", e => { P.ell = e.target.checked; drawAll(); });
+$("lSwarm").addEventListener("change", e => { P.swarm = e.target.checked; drawAll(); });
+$("lTop").addEventListener("change", e => { P.centre = e.target.checked ? PI : 0; S.husDirty = true; drawAll(); });
+
+let playing = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const setPlay = v => { playing = v; $("play").textContent = v ? "Pause" : "Play"; };
+$("play").addEventListener("click", () => setPlay(!playing));
+$("restart").addEventListener("click", () => { restart(); });
+
+let acc = 0, last = performance.now(), holdLeft = 0;
+const HOLD = 0.9;                       // seconds to show the final state before repeating
+function loop(now) {
+  const dtReal = Math.min((now - last) / 1000, 0.05); last = now;
+  if (playing) {
+    if (S.t >= P.tMax - 1e-9) {
+      if (holdLeft <= 0) holdLeft = HOLD;
+      holdLeft -= dtReal;
+      if (holdLeft <= 0) { holdLeft = 0; acc = 0; restart(); }
+    } else {
+      acc += dtReal * P.speed;
+      let n = Math.floor(acc / DT); acc -= n * DT;
+      n = Math.min(n, Math.ceil((P.tMax - S.t) / DT - 1e-6));
+      if (n > 0) { advance(n); drawAll(); }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+const themeChange = () => { readColors(); if (S) drawAll(); };
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeChange);
+new MutationObserver(themeChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+let rz = 0; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => S && drawAll()); }).observe(document.querySelector(".plots"));
+
+readColors(); syncInputs(); restart(); setPlay(playing);
+requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
+
+// small hook for testing / embedding pages
+window.josephson = { P, get state() { return S; }, advance, stats, restart, setPlay };
+})();
+</script>
+</body>
+</html>
