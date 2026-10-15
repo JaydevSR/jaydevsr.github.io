@@ -171,7 +171,11 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
         <div class="slider">
           <label for="sp">Speed<output id="spv" for="sp"></output></label>
           <input type="range" id="sp" min="0" max="1" step="0.001" value="0.5">
-          <p class="hint">each run lasts until <span class="m">t</span> = 10, then repeats</p>
+        </div>
+        <div class="slider">
+          <label for="tm"><span>Repeat after <span class="m">t</span> =</span><output id="tmv" for="tm"></output></label>
+          <input type="range" id="tm" min="4" max="30" step="1" value="10">
+          <p class="hint">the run restarts from <span class="m">t</span> = 0 after a short pause</p>
         </div>
       </section>
     </aside>
@@ -228,7 +232,7 @@ const wrap = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
 const $ = id => document.getElementById(id);
 
 /* ---------- parameters ---------- */
-const P = { x0: 0, k0: 2, hbar: 0.03, w: 1, speed: 1, tMax: 8, centre: 0,
+const P = { x0: 0, k0: 2, hbar: 0.03, w: 1, speed: 1, tMax: 10, centre: 0,
             hus: true, ell: true, swarm: false };
 const PRESETS = {
   osc: { x0: 0, k0: Math.sqrt(0.8), centre: 0 },
@@ -543,18 +547,40 @@ function drawPhase() {
   // semiclassical ellipse (drawn at the wrapped centre and its periodic images)
   const [xc0, kc, qq, qp, pp] = S.y, xc = P.centre + wrap(xc0 - P.centre);
   if (P.ell) {
-    const a = Math.sqrt(Math.max(qq, 1e-12)), c = qp / a, d = Math.sqrt(Math.max(pp - c * c, 0));
+    // Cholesky factor of Delta. det(Delta) = (hbar/2)^2 is conserved by the linearized flow,
+    // so the minor factor is taken from it rather than from a cancelling difference.
+    const a = Math.sqrt(Math.max(qq, 1e-12)), c = qp / a, d = (P.hbar / 2) / a;
+    // The ellipse can grow exponentially (separatrix, hilltop). Clip each chord to the
+    // visible box before stroking, so the cost of drawing it stays bounded.
+    const mx = 0.05 * TAU, my = 0.05 * pb;
+    const bx0 = xr[0] - mx, bx1 = xr[1] + mx, by0 = -pb - my, by1 = pb + my;
+    const NS = 360;
     for (const [ns, dash, lw] of [[1, [], 1.8], [2, [5, 4], 1.2]]) {
       ctx.strokeStyle = C.fg; ctx.lineWidth = lw; ctx.setLineDash(dash);
+      ctx.beginPath();
       for (const shift of [-TAU, 0, TAU]) {
-        ctx.beginPath();
-        for (let i = 0; i <= 120; i++) {
-          const th = i / 120 * TAU, u = Math.cos(th) * ns, v = Math.sin(th) * ns;
-          const x = xc + shift + a * u, y = kc + c * u + d * v;
-          i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y));
+        let px = xc + shift + a * ns, py = kc + c * ns, pen = false;
+        for (let i = 1; i <= NS; i++) {
+          const th = i / NS * TAU, u = Math.cos(th) * ns, v = Math.sin(th) * ns;
+          const qx = xc + shift + a * u, qy = kc + c * u + d * v;
+          // Liang-Barsky clip of segment (px,py)->(qx,qy)
+          const dx = qx - px, dy = qy - py;
+          let u0 = 0, u1 = 1, ok = true;
+          for (const [pp_, qq_] of [[-dx, px - bx0], [dx, bx1 - px], [-dy, py - by0], [dy, by1 - py]]) {
+            if (pp_ === 0) { if (qq_ < 0) { ok = false; break; } continue; }
+            const r = qq_ / pp_;
+            if (pp_ < 0) { if (r > u1) { ok = false; break; } if (r > u0) u0 = r; }
+            else { if (r < u0) { ok = false; break; } if (r < u1) u1 = r; }
+          }
+          if (ok) {
+            if (!pen || u0 > 0) ctx.moveTo(X(px + u0 * dx), Y(py + u0 * dy));
+            ctx.lineTo(X(px + u1 * dx), Y(py + u1 * dy));
+            pen = u1 === 1;
+          } else pen = false;
+          px = qx; py = qy;
         }
-        ctx.stroke();
       }
+      ctx.stroke();
     }
     ctx.setLineDash([]);
   }
@@ -604,6 +630,7 @@ function syncInputs() {
   $("x0").value = P.x0; $("k0").value = P.k0;
   $("hb").value = uFromHb(P.hbar); $("ww").value = Math.log(P.w / 0.25) / Math.log(16);
   $("sp").value = Math.log(P.speed / 0.25) / Math.log(16);
+  $("tm").value = P.tMax;
   $("lTop").checked = P.centre !== 0;
   labels();
 }
@@ -612,6 +639,7 @@ function labels() {
   $("hbv").textContent = P.hbar < 0.1 ? P.hbar.toFixed(3) : P.hbar.toFixed(2);
   $("wwv").textContent = P.w.toFixed(2);
   $("spv").textContent = P.speed.toFixed(2) + "×";
+  $("tmv").textContent = P.tMax;
   const sq = Math.sqrt(P.hbar * P.w / 2), sp = Math.sqrt(P.hbar / (2 * P.w));
   $("wHint").innerHTML = `σ<sub>q</sub>(0) = ${sq.toFixed(3)}, σ<sub>p</sub>(0) = ${sp.toFixed(3)}${Math.abs(P.w - 1) < 0.02 ? " · matched to small oscillations" : ""}`;
 }
@@ -639,6 +667,7 @@ const onParam = () => {
 };
 for (const id of ["x0", "k0", "hb", "ww"]) $(id).addEventListener("input", onParam);
 $("sp").addEventListener("input", () => { P.speed = spFromU(+$("sp").value); labels(); });
+$("tm").addEventListener("input", () => { P.tMax = +$("tm").value; labels(); drawAll(); });
 $("lHus").addEventListener("change", e => { P.hus = e.target.checked; S.husDirty = true; drawAll(); });
 $("lEll").addEventListener("change", e => { P.ell = e.target.checked; drawAll(); });
 $("lSwarm").addEventListener("change", e => { P.swarm = e.target.checked; drawAll(); });
