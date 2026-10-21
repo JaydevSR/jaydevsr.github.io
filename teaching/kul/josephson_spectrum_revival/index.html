@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Josephson Spectrum and Revivals</title>
+<meta name="description" content="Interactive companion to Tutorial 2c: Bohr–Sommerfeld orbits and the exact spectrum of the quantum pendulum (Josephson) Hamiltonian, and the collapse and revival of a coherent state.">
+<style>
+/* Same lab-instrument layout as josephson_wavepackets.html: controls on the left, live plots on
+   the right, stacked on phones. Two tabs share the controls column; tab-specific groups toggle. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #1a1d23;
+  --muted: #5b6270;
+  --rule: #d8dce4;
+  --pot: #4b505b;
+  --accent: #2b4c7e;
+  --osc: #2266c4;
+  --sep: #d4471c;
+  --rot: #129067;
+  --focus: #2b4c7e;
+  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-data: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+    --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+    --focus: #8fb0e6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+  --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+  --focus: #8fb0e6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lead { margin: 2px 0 0; max-width: 72ch; color: var(--muted); }
+.m { font-family: var(--font-display); font-style: italic; }
+.mu { font-family: var(--font-display); }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); overflow-x: auto; }
+.tabs button {
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--muted); background: none;
+  border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px; margin-bottom: -1px;
+  cursor: pointer; white-space: nowrap;
+}
+.tabs button:hover { color: var(--fg); }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tabs small { font-weight: 400; color: var(--muted); margin-left: 6px; font-size: 12.5px; }
+
+.app { display: grid; grid-template-columns: 17.5rem minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .viz { order: -1; } }
+
+/* controls */
+.controls { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 16px; display: grid; gap: 16px; }
+.group { display: grid; gap: 10px; }
+.group[hidden] { display: none; }
+.group h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets button { display: grid; gap: 1px; text-align: left; }
+.presets button small { color: var(--muted); font-size: 11.5px; font-family: var(--font-data); }
+.presets button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+button {
+  font: inherit; font-size: 14px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 7px; padding: 7px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { display: grid; gap: 2px; }
+.slider label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.slider output { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--fg); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--fg); vertical-align: middle; }
+.swatch.dash { border-top-style: dashed; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fg); vertical-align: middle; }
+.jumps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.jumps button { padding: 6px 4px; font-size: 13px; }
+
+/* toolbar */
+.viz { display: grid; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.toolbar[hidden] { display: none; }
+.toolbar .btns { display: flex; gap: 8px; }
+.toolbar .primary { background: var(--fg); color: var(--bg); border-color: var(--fg); min-width: 5.5em; }
+.readouts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; align-items: baseline; }
+.readouts .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 1px 9px 2px; border-radius: 999px; border: 1px solid currentColor; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.scrub { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; width: 100%; }
+
+.plots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.plots[hidden] { display: none; }
+@media (max-width: 680px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px 8px; display: grid; gap: 4px; min-width: 0; margin: 0; }
+.panel.wide { grid-column: 1 / -1; }
+.panel header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.panel h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.panel .key { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; }
+canvas { display: block; width: 100%; max-width: 100%; }
+.r43 { aspect-ratio: 4 / 3; }
+.r_state { aspect-ratio: 16 / 5.2; }
+.r_clock { aspect-ratio: 16 / 4.4; }
+.r_trace { aspect-ratio: 16 / 4.2; }
+@media (max-width: 680px) { .r_state, .r_clock, .r_trace { aspect-ratio: 16 / 8; } }
+#cvSpacing { cursor: pointer; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 22px; font-size: 14px; color: var(--muted); }
+.notes[hidden] { display: none; }
+.notes p { margin: 0; max-width: 62ch; }
+.notes strong { color: var(--fg); font-weight: 600; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+footer p { margin: 0 0 4px; max-width: 100ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Advanced Quantum Mechanics · Tutorial 2c</p>
+    <h1>Spectrum and revivals of the quantum pendulum</h1>
+    <p class="lead">The Josephson Hamiltonian <span class="m">H</span> <span class="mu">=</span> <span class="m">p</span>²/2<span class="m">m</span> <span class="mu">−</span> <span class="m">λ</span> <span class="mu">cos</span> <span class="m">q</span>, solved exactly and compared with the semiclassical picture. The first tab places Bohr–Sommerfeld orbits next to the exact eigenstates; the second follows a coherent state through collapse and revival, long after the classical description has failed.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="plots1">Quantized orbits</button>
+    <button type="button" role="tab" id="tab2" aria-selected="false" aria-controls="plots2" tabindex="-1">Collapse and revival</button>
+  </div>
+
+  <div class="app">
+    <aside class="controls" aria-label="Controls">
+      <!-- tab 1 -->
+      <section class="group" data-tab="1">
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the spectrum view">
+          <button type="button" data-preset1="sheet" aria-pressed="true">Tutorial sheet<small>ħ = 0.1</small></button>
+          <button type="button" data-preset1="transmon" aria-pressed="false">Transmon<small>E<sub>J</sub>/E<sub>C</sub> = 50</small></button>
+          <button type="button" data-preset1="deep" aria-pressed="false">Few levels<small>ħ = 0.8</small></button>
+          <button type="button" data-preset1="classical" aria-pressed="false">Near classical<small>ħ = 0.04</small></button>
+        </div>
+      </section>
+      <!-- tab 2 -->
+      <section class="group" data-tab="2" hidden>
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the revival view">
+          <button type="button" data-preset2="sheet" aria-pressed="true">Sheet Fig. 2<small>ħ 0.1 · x<sub>0</sub> 0.8</small></button>
+          <button type="button" data-preset2="small" aria-pressed="false">Smaller ħ<small>ħ 0.05</small></button>
+          <button type="button" data-preset2="large" aria-pressed="false">Large swing<small>x<sub>0</sub> 1.8</small></button>
+          <button type="button" data-preset2="squeezed" aria-pressed="false">Squeezed<small>w 2.5</small></button>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Quantum scale</h2>
+        <div class="slider">
+          <label for="hb"><span>Planck constant <span class="m">ħ</span><sub>eff</sub></span><output id="hbv" for="hb"></output></label>
+          <input type="range" id="hb" min="0" max="1" step="0.001" value="0.5">
+          <p class="hint" id="hbHint">ħ/√(<span class="m">mλ</span>) = √(8<span class="m">E</span><sub>C</sub>/<span class="m">E</span><sub>J</sub>); smaller is more classical</p>
+        </div>
+      </section>
+
+      <!-- tab 1 -->
+      <section class="group" data-tab="1">
+        <h2>Selected level</h2>
+        <div class="slider">
+          <label for="lev"><span>Eigenstate <span class="m">j</span></span><output id="levv" for="lev"></output></label>
+          <input type="range" id="lev" min="0" max="40" step="1" value="5">
+          <p class="hint">or click a dot in the spacing plot</p>
+        </div>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Show</h2>
+        <label class="check"><input type="checkbox" id="lOrb" checked> Bohr–Sommerfeld orbits</label>
+        <label class="check"><input type="checkbox" id="lHus1" checked> Husimi density of the eigenstate</label>
+        <label class="check"><input type="checkbox" id="lCurve" checked> <span>Semiclassical spacing ħω<sub>cl</sub>(<span class="m">E</span>)</span></label>
+      </section>
+
+      <!-- tab 2 -->
+      <section class="group" data-tab="2" hidden>
+        <h2>Initial coherent state</h2>
+        <div class="slider">
+          <label for="x0"><span>Angle <span class="m">x</span><sub>0</sub> (with <span class="m">k</span><sub>0</sub> = 0)</span><output id="x0v" for="x0"></output></label>
+          <input type="range" id="x0" min="0.1" max="3.0" step="0.01" value="0.8">
+        </div>
+        <div class="slider">
+          <label for="ww"><span>Packet shape <span class="m">w</span></span><output id="wwv" for="ww"></output></label>
+          <input type="range" id="ww" min="0" max="1" step="0.001" value="0.5">
+          <p class="hint" id="wHint"></p>
+        </div>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Jump to</h2>
+        <div class="jumps" role="group" aria-label="Jump to a characteristic time">
+          <button type="button" data-jump="0">0</button>
+          <button type="button" data-jump="coll"><span class="m">T</span><sub>coll</sub></button>
+          <button type="button" data-jump="q"><span class="m">T</span><sub>rev</sub>/4</button>
+          <button type="button" data-jump="h"><span class="m">T</span><sub>rev</sub>/2</button>
+          <button type="button" data-jump="f"><span class="m">T</span><sub>rev</sub></button>
+          <button type="button" data-jump="peak">1st peak</button>
+        </div>
+        <p class="hint">Jumps use <span class="m">T</span><sub>rev</sub> from the curvature of the exact levels at <span class="m">n̄</span>; the dashed markers in the trace are the quartic estimates of B2(b, c).</p>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Playback</h2>
+        <div class="slider">
+          <label for="sp">Speed<output id="spv" for="sp"></output></label>
+          <input type="range" id="sp" min="0" max="1" step="0.001" value="0.6">
+        </div>
+        <label class="check"><input type="checkbox" id="lStrobe" checked> Co-rotate with the classical orbit</label>
+        <p class="hint">Removes the uniform rotation at ω<sub>cl</sub>(<span class="m">n̄</span>), so the fast orbiting is frozen and the slow collapse and revival stand out. At every multiple of <span class="m">T</span><sub>cl</sub> this is exactly the true state.</p>
+      </section>
+    </aside>
+
+    <main class="viz">
+      <!-- tab 1 toolbar -->
+      <div class="toolbar" id="tb1">
+        <div class="readouts" aria-live="off">
+          <span title="Exact count of eigenvalues below the separatrix">levels below <span class="m">E</span> = <span class="m">λ</span>: <span class="num" id="rCount">—</span></span>
+          <span title="Bohr–Sommerfeld estimate: separatrix area 16√(mλ) divided by h">16√(<span class="m">mλ</span>)/<span class="m">h</span> = <span class="num" id="rCountBS">—</span></span>
+          <span class="chip" id="rReg1">oscillation</span>
+        </div>
+      </div>
+      <!-- tab 2 toolbar -->
+      <div class="toolbar" id="tb2" hidden>
+        <div class="btns">
+          <button type="button" class="primary" id="play">Play</button>
+          <button type="button" id="restart">Restart</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <span><span class="m">t</span> = <span class="num" id="rT">0</span></span>
+          <span><span class="m">n̄</span> = <span class="num" id="rN">—</span></span>
+          <span>σ<sub><span class="m">n</span></sub> = <span class="num" id="rS">—</span></span>
+          <span><span class="m">T</span><sub>cl</sub> = <span class="num" id="rTcl">—</span></span>
+          <span><span class="m">T</span><sub>coll</sub> ≈ <span class="num" id="rTcoll">—</span></span>
+          <span title="quartic estimate 32π/ħ, and from the curvature of the exact levels at n̄"><span class="m">T</span><sub>rev</sub> ≈ <span class="num" id="rTrev">—</span> <span class="hint">(quartic)</span> · <span class="num" id="rTrev2">—</span> <span class="hint">(exact levels)</span></span>
+        </div>
+        <div class="scrub">
+          <label for="tScrub">time</label>
+          <input type="range" id="tScrub" min="0" max="1" step="0.0001" value="0" aria-label="Time">
+        </div>
+      </div>
+
+      <!-- tab 1 plots -->
+      <div class="plots" id="plots1" role="tabpanel" aria-labelledby="tab1">
+        <figure class="panel">
+          <header><h3>Phase space</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> oscillating</span><span><span class="swatch" style="border-top-color:var(--rot)"></span> rotating</span><span>shading: Husimi</span></div></header>
+          <canvas id="cvOrb" class="r43" role="img" aria-label="Phase space with the Bohr–Sommerfeld quantized orbits and the Husimi density of the selected eigenstate"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Level spacing</h3><div class="key"><span><span class="dot"></span> exact</span><span><span class="swatch dash"></span> ħω<sub>cl</sub>(<span class="m">E</span>)</span></div></header>
+          <canvas id="cvSpacing" class="r43" tabindex="0" role="img" aria-label="Spacing between neighbouring exact levels against energy, with the semiclassical classical-frequency curve. Click a dot to select a level."></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Selected eigenstate</h3><div class="key"><span id="levInfo">—</span><span><span class="swatch"></span> exact |ψ<sub><span class="m">j</span></sub>|²</span><span><span class="swatch dash"></span> WKB / classical density</span></div></header>
+          <canvas id="cvState" class="r_state" role="img" aria-label="Probability density of the selected eigenstate over the potential, with the WKB density"></canvas>
+        </figure>
+      </div>
+
+      <!-- tab 2 plots -->
+      <div class="plots" id="plots2" role="tabpanel" aria-labelledby="tab2" hidden>
+        <figure class="panel">
+          <header><h3>Phase space</h3><div class="key"><span>shading: Husimi</span><span><span class="swatch dash"></span> classical orbit at ⟨<span class="m">Ĥ</span>⟩</span></div></header>
+          <canvas id="cvPhase2" class="r43" role="img" aria-label="Husimi density of the evolving state in phase space"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Position space</h3><div class="key"><span>|ψ(<span class="m">q</span>,<span class="m">t</span>)|² on its mean energy</span></div></header>
+          <canvas id="cvPos2" class="r43" role="img" aria-label="Probability density of the evolving state over the potential"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Phase clocks</h3><div class="key"><span>bars: <span class="m">P<sub>n</sub></span> = |<span class="m">c<sub>n</sub></span>|²</span><span>hands: phase of <span class="m">c<sub>n</sub></span><span class="m">e</span><sup>−<span class="m">iE<sub>n</sub>t</span>/ħ</sup> in the frame rotating with ω<sub>cl</sub></span></div></header>
+          <canvas id="cvClock" class="r_clock" role="img" aria-label="Occupation of each energy level, with a clock hand showing its phase relative to uniform classical rotation"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>⟨sin <span class="m">q̂</span>⟩ over the full run</h3><div class="key"><span>exact</span><span><span class="swatch dash"></span> quartic estimates</span><span>click to jump</span></div></header>
+          <canvas id="cvTrace" class="r_trace" tabindex="0" role="img" aria-label="Expectation value of sin q against time, showing collapse and revivals. Click to jump in time."></canvas>
+        </figure>
+      </div>
+    </main>
+  </div>
+
+  <section class="notes" id="notes1" aria-label="How to read the spectrum view">
+    <p><strong>Orbits.</strong> Each coloured curve is a classical orbit picked by Bohr–Sommerfeld: area (<span class="m">n</span> + ½)<span class="m">h</span> inside the separatrix, and <span class="m">nh</span> under a rotating orbit, which has no turning points. Rotating orbits come in pairs, one for each direction, at the same energy.</p>
+    <p><strong>Spacing.</strong> Dots are exact gaps <span class="m">E</span><sub><span class="m">j</span>+1</sub> − <span class="m">E<sub>j</sub></span>. Below the separatrix they follow ħω<sub>cl</sub>(<span class="m">E</span>) and dip where the period diverges. Above it they split into near-zero gaps inside a pair and gaps of ħω<sub>cl</sub> between pairs.</p>
+    <p><strong>Eigenstate.</strong> The exact density oscillates around the WKB density 2/(<span class="m">T</span><sub>cl</sub> <span class="m">v</span>(<span class="m">q</span>)), the fraction of time the classical particle spends at <span class="m">q</span>. Its Husimi function sits on the quantized orbit.</p>
+  </section>
+  <section class="notes" id="notes2" aria-label="How to read the revival view" hidden>
+    <p><strong>Collapse.</strong> The packet smears around its orbit because neighbouring levels are not equally spaced. The clock hands fan out at the same time.</p>
+    <p><strong>Revival.</strong> At <span class="m">T</span><sub>rev</sub>/2 every phase is a multiple of π: hands near <span class="m">n̄</span> alternate up and down, and the packet re-forms half an orbit away. At <span class="m">T</span><sub>rev</sub>/4 the hands form two groups: a superposition of two packets. Hands far from <span class="m">n̄</span> drift off because of higher-order terms in <span class="m">E<sub>n</sub></span>.</p>
+    <p><strong>Markers.</strong> The dashed lines use the quartic spectrum of B1(b). The actual revivals come slightly earlier, because the levels near <span class="m">n̄</span> are more curved than the quartic estimate.</p>
+  </section>
+
+  <footer>
+    <p>Scaled units <span class="m">m</span> = <span class="m">λ</span> = 1: energies in units of <span class="m">λ</span>, momenta in units of √(<span class="m">mλ</span>), time in units of 1/ω<sub><span class="m">p</span></sub> = √(<span class="m">m</span>/<span class="m">λ</span>).</p>
+    <p>Numerics: exact diagonalization of <span class="m">Ĥ</span> in the angular-momentum basis |<span class="m">n</span>⟩ (<span class="m">p</span> = ħ<span class="m">n</span>, <span id="rBasis">—</span> states, tridiagonal QL algorithm). Time evolution is exact, through the eigen-decomposition, so any time can be reached directly. Classical periods and actions from complete elliptic integrals.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const TAU = 2 * Math.PI, PI = Math.PI;
+const $ = id => document.getElementById(id);
+const wrap = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
+
+/* ================= parameters ================= */
+const EMAX1 = 3.2;                       // top of the spectrum shown in tab 1
+const P = { tab: 1, hbar: 0.1, lev: 5, orb: true, hus1: true, curve: true,
+            x0: 0.8, w: 1, speed: 2, strobe: true };
+const hbFromU = u => 0.03 * Math.pow(1.0 / 0.03, u);           // 0.03 ... 1
+const uFromHb = h => Math.log(h / 0.03) / Math.log(1.0 / 0.03);
+const wFromU = u => 0.25 * Math.pow(16, u);
+const uFromW = w => Math.log(w / 0.25) / Math.log(16);
+const spFromU = u => Math.pow(10, 3 * u - 1.5);                // relative speed 0.03 ... 30
+const PRESETS1 = { sheet: 0.1, transmon: 0.4, deep: 0.8, classical: 0.04 };
+const PRESETS2 = { sheet: { h: 0.1, x0: 0.8, w: 1 }, small: { h: 0.05, x0: 0.8, w: 1 },
+                   large: { h: 0.1, x0: 1.8, w: 1 }, squeezed: { h: 0.1, x0: 0.8, w: 2.5 } };
+
+/* ================= classical mechanics (m = λ = 1) ================= */
+// complete elliptic integrals K(k), E(k) of modulus k by the AGM
+function ellKE(k) {
+  if (k >= 1) return [Infinity, 1];
+  let a = 1, b = Math.sqrt(1 - k * k), sum = 0.5 * k * k, p = 1;
+  for (let it = 0; it < 40; it++) {
+    const c = 0.5 * (a - b), an = 0.5 * (a + b), bn = Math.sqrt(a * b);
+    sum += p * c * c; p *= 2; a = an; b = bn;
+    if (Math.abs(c) < 1e-16) break;
+  }
+  const K = PI / (2 * a);
+  return [K, K * (1 - sum)];
+}
+// oscillation, -1 < E < 1:  kappa^2 = (E+1)/2,  S = 16 [E(k) - (1-k^2) K(k)],  T = 4 K(k)
+function Sosc(E) { const k2 = (E + 1) / 2, [K, Ee] = ellKE(Math.sqrt(k2)); return 16 * (Ee - (1 - k2) * K); }
+function Tosc(E) { return 4 * ellKE(Math.sqrt((E + 1) / 2))[0]; }
+// rotation, E > 1: kappa^2 = 2/(E+1),  ∫_{-π}^{π} p dq = 4 √(2(E+1)) E(k),  T = 2 k K(k)
+function Srot(E) { const k = Math.sqrt(2 / (E + 1)); return 4 * Math.sqrt(2 * (E + 1)) * ellKE(k)[1]; }
+function Trot(E) { const k = Math.sqrt(2 / (E + 1)); return 2 * k * ellKE(k)[0]; }
+function bisect(f, lo, hi) { for (let i = 0; i < 80; i++) { const mid = 0.5 * (lo + hi); if (f(mid) > 0) hi = mid; else lo = mid; } return 0.5 * (lo + hi); }
+function bsLevels(h, Emax) {
+  const out = [];
+  for (let n = 0; ; n++) {
+    const S = TAU * h * (n + 0.5); if (S >= 16) break;
+    out.push({ E: bisect(E => Sosc(E) - S, -1, 1 - 1e-14), n, kind: "osc" });
+  }
+  const SmaxRot = Srot(Emax);
+  for (let n = Math.ceil(8 / (TAU * h) + 1e-12); ; n++) {
+    const S = TAU * h * n; if (S > SmaxRot) break;
+    out.push({ E: bisect(E => Srot(E) - S, 1 + 1e-14, Emax + 1), n, kind: "rot" });
+  }
+  return out;
+}
+
+/* ================= exact diagonalization ================= */
+// symmetric tridiagonal QL with implicit shifts (Numerical Recipes tqli), 0-indexed.
+// d: diagonal (n), e: off-diagonal e[i] couples i and i+1 (e[n-1] = 0). z: n*n identity on input,
+// on output column j (z[k*n+j]) is the eigenvector of d[j].
+function tqli(d, e, n, z) {
+  for (let l = 0; l < n; l++) {
+    let iter = 0, m;
+    do {
+      for (m = l; m < n - 1; m++) { const dd = Math.abs(d[m]) + Math.abs(d[m + 1]); if (Math.abs(e[m]) <= 1e-15 * dd) break; }
+      if (m !== l) {
+        if (iter++ === 100) throw new Error("tqli: no convergence");
+        let g = (d[l + 1] - d[l]) / (2 * e[l]), r = Math.hypot(g, 1);
+        g = d[m] - d[l] + e[l] / (g + (g >= 0 ? Math.abs(r) : -Math.abs(r)));
+        let s = 1, c = 1, p = 0, i, early = false;
+        for (i = m - 1; i >= l; i--) {
+          let f = s * e[i]; const b = c * e[i];
+          e[i + 1] = (r = Math.hypot(f, g));
+          if (r === 0) { d[i + 1] -= p; e[m] = 0; early = true; break; }
+          s = f / r; c = g / r; g = d[i + 1] - p; r = (d[i] - g) * s + 2 * c * b; p = s * r; d[i + 1] = g + p; g = c * r - b;
+          for (let k = 0; k < n; k++) { const row = k * n; f = z[row + i + 1]; z[row + i + 1] = s * z[row + i] + c * f; z[row + i] = c * z[row + i] - s * f; }
+        }
+        if (early) continue;
+        d[l] -= p; e[l] = g; e[m] = 0;
+      }
+    } while (m !== l);
+  }
+}
+const cache = new Map();
+function diag(h) {
+  const key = h.toFixed(6);
+  if (cache.has(key)) return cache.get(key);
+  const Nb = Math.ceil(3.5 / h) + 14, n = 2 * Nb + 1;
+  const d = new Float64Array(n), e = new Float64Array(n), z = new Float64Array(n * n);
+  for (let b = 0; b < n; b++) { const nn = b - Nb; d[b] = 0.5 * h * h * nn * nn; e[b] = b < n - 1 ? -0.5 : 0; z[b * n + b] = 1; }
+  tqli(d, e, n, z);
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => d[a] - d[b]);
+  const E = new Float64Array(n), V = new Float64Array(n * n);   // V[b*n + j]: component on |n=b-Nb> of level j
+  for (let j = 0; j < n; j++) { const src = order[j]; E[j] = d[src]; for (let b = 0; b < n; b++) V[b * n + j] = z[b * n + src]; }
+  // fix sign convention: largest component positive
+  for (let j = 0; j < n; j++) { let bi = 0, bv = 0; for (let b = 0; b < n; b++) { const v = Math.abs(V[b * n + j]); if (v > bv) { bv = v; bi = b; } } if (V[bi * n + j] < 0) for (let b = 0; b < n; b++) V[b * n + j] *= -1; }
+  const D = { h, Nb, n, E, V };
+  if (cache.size > 6) cache.delete(cache.keys().next().value);
+  cache.set(key, D);
+  return D;
+}
+function column(D, j) { const { n, V } = D, c = new Float64Array(n); for (let b = 0; b < n; b++) c[b] = V[b * n + j]; return c; }
+
+/* ================= wave functions on a grid ================= */
+const NQ = 512, QGRID = Float64Array.from({ length: NQ + 1 }, (_, i) => -PI + i * TAU / NQ);
+// psi(q) = sum_n c_n e^{inq} / sqrt(2π); c given as (re, im) arrays over the basis
+function supportOf(n, cre, cim) {
+  let lo = n, hi = -1;
+  for (let b = 0; b < n; b++) if (Math.abs(cre[b]) + Math.abs(cim ? cim[b] : 0) > 1e-7) { if (b < lo) lo = b; if (b > hi) hi = b; }
+  return [lo, hi];
+}
+function densityOnGrid(D, cre, cim, lo, hi) {
+  const { Nb, n } = D, rho = new Float64Array(NQ + 1);
+  if (lo === undefined) [lo, hi] = supportOf(n, cre, cim);
+  for (let i = 0; i <= NQ; i++) {
+    const q = QGRID[i]; let sr = 0, si = 0;
+    const c1 = Math.cos(q), s1 = Math.sin(q);
+    let cr = Math.cos((lo - Nb) * q), ci = Math.sin((lo - Nb) * q);
+    for (let b = lo; b <= hi; b++) {
+      const ar = cre[b], ai = cim ? cim[b] : 0;
+      sr += ar * cr - ai * ci; si += ar * ci + ai * cr;
+      const t = cr * c1 - ci * s1; ci = cr * s1 + ci * c1; cr = t;
+    }
+    rho[i] = (sr * sr + si * si) / TAU;
+  }
+  return rho;
+}
+// Husimi Q(q0, p0) = |<alpha|psi>|^2 with a w = 1 coherent state, evaluated in the momentum basis
+const MQ = 128;
+function husimi(D, cre, cim, pb, rows, wq, lo, hi) {
+  const { Nb, n, h } = D, Q = new Float32Array(MQ * rows);
+  if (lo === undefined) [lo, hi] = supportOf(n, cre, cim);
+  const ww = h * wq, cut = 3.6 / Math.sqrt(ww);
+  const cosT = new Float64Array(MQ), sinT = new Float64Array(MQ);
+  let qmax = 0;
+  const g = new Float64Array(n);
+  for (let r = 0; r < rows; r++) {
+    const p0 = pb - (r + 0.5) * 2 * pb / rows, nc = p0 / h;
+    const blo = Math.max(lo, Math.floor(nc - cut) + Nb), bhi = Math.min(hi, Math.ceil(nc + cut) + Nb);
+    if (blo > bhi) continue;
+    for (let b = blo; b <= bhi; b++) { const u = b - Nb - nc; g[b] = Math.exp(-0.5 * ww * u * u); }
+    for (let i = 0; i < MQ; i++) {
+      const q0 = -PI + (i + 0.5) * TAU / MQ;
+      const c1 = Math.cos(q0), s1 = Math.sin(q0);
+      let cr = Math.cos((blo - Nb) * q0), ci = Math.sin((blo - Nb) * q0), sr = 0, si = 0;
+      for (let b = blo; b <= bhi; b++) {
+        const ar = g[b] * cre[b], ai = cim ? g[b] * cim[b] : 0;
+        sr += ar * cr - ai * ci; si += ar * ci + ai * cr;
+        const t = cr * c1 - ci * s1; ci = cr * s1 + ci * c1; cr = t;
+      }
+      const v = sr * sr + si * si; Q[r * MQ + i] = v; if (v > qmax) qmax = v;
+    }
+  }
+  return { Q, rows, qmax, pb };
+}
+
+/* ================= drawing helpers ================= */
+let C = {}, BODYFONT = "sans-serif";
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = { fg: g("--fg"), muted: g("--muted"), rule: g("--rule"), pot: g("--pot"), surface: g("--surface"),
+        osc: g("--osc"), sep: g("--sep"), rot: g("--rot"), accent: g("--accent") };
+  BODYFONT = getComputedStyle(document.body).fontFamily;
+}
+function hexToRgb(h) { const m = h.replace("#", ""); const v = parseInt(m.length === 3 ? m.split("").map(c => c + c).join("") : m, 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+function rgba(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+const FONT = s => `${s}px ${BODYFONT}`;
+const MFONT = s => `italic ${s}px "Iowan Old Style", Charter, Cambria, Georgia, serif`;
+function prepCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, r.width, r.height);
+  return { ctx, w: r.width, h: r.height };
+}
+const Q_TICKS = [[-PI, "−π"], [-PI / 2, "−π/2"], [0, "0"], [PI / 2, "π/2"], [PI, "π"]];
+function numLabel(v) { const s = Math.abs(v) < 1e-9 ? "0" : String(+v.toFixed(2)); return v < 0 ? "−" + s.slice(1) : s; }
+function frame(ctx, box, xr, yr, xt, yt, xlab, ylab, ylabUpright) {
+  const X = v => box.l + (v - xr[0]) / (xr[1] - xr[0]) * box.w;
+  const Y = v => box.t + (1 - (v - yr[0]) / (yr[1] - yr[0])) * box.h;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, box.t + box.h); ctx.lineTo(box.l + box.w, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const [v, s] of xt) { const x = X(v); ctx.beginPath(); ctx.moveTo(x, box.t + box.h); ctx.lineTo(x, box.t + box.h + 4); ctx.stroke(); ctx.fillText(s, x, box.t + box.h + 6); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const [v, s] of yt) { const y = Y(v); ctx.beginPath(); ctx.moveTo(box.l - 4, y); ctx.lineTo(box.l, y); ctx.stroke(); ctx.fillText(s, box.l - 6, y); }
+  ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  drawRich(ctx, richSegs(xlab, true), box.l + box.w / 2, box.t + box.h + 36, 13, "center");
+  ctx.save(); ctx.translate(13, box.t + box.h / 2); ctx.rotate(-PI / 2); ctx.textBaseline = "middle";
+  drawRich(ctx, richSegs(ylab, !ylabUpright), 0, 0, ylabUpright ? 12 : 13, "center"); ctx.restore();
+  return { X, Y };
+}
+// text with subscripts: segs = [[text, isSub, isItalic], ...]
+function richSegs(lab, italic) { return typeof lab === "string" ? [[lab, 0, italic ? 1 : 0]] : lab; }
+function drawRich(ctx, segs, x, y, size, align) {
+  const fontOf = sg => (sg[2] ? MFONT : FONT)(sg[1] ? Math.round(size * 0.74) : size);
+  let wsum = 0; for (const sg of segs) { ctx.font = fontOf(sg); wsum += ctx.measureText(sg[0]).width; }
+  let cx = align === "center" ? x - wsum / 2 : (align === "right" ? x - wsum : x);
+  const ta = ctx.textAlign; ctx.textAlign = "left";
+  for (const sg of segs) { ctx.font = fontOf(sg); ctx.fillText(sg[0], cx, y + (sg[1] ? size * 0.28 : 0)); cx += ctx.measureText(sg[0]).width; }
+  ctx.textAlign = ta;
+}
+function intTicks(lo, hi, step) { const t = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) t.push([v, numLabel(v)]); return t; }
+// a constant-energy curve p = ±√(2(E + cos q)) on the full ring
+function drawLevel(ctx, X, Y, Ev, stroke, lw, dash, sgns) {
+  ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+  for (const sgn of (sgns || [1, -1])) {
+    ctx.beginPath(); let on = false;
+    for (let i = 0; i <= 480; i++) {
+      const x = -PI + i / 480 * TAU, s = 2 * (Ev + Math.cos(x));
+      if (s >= 0) { const y = Y(sgn * Math.sqrt(s)); on ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); on = true; } else on = false;
+    }
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+const husCanvas = document.createElement("canvas");
+function drawHusimi(ctx, X, Y, H, col) {
+  const { Q, rows, qmax, pb } = H;
+  husCanvas.width = MQ; husCanvas.height = rows;
+  const hctx = husCanvas.getContext("2d"), img = hctx.createImageData(MQ, rows), [r, g, b] = hexToRgb(col);
+  const inv = 1 / (qmax || 1);
+  for (let k = 0; k < MQ * rows; k++) {
+    const a = Math.pow(Q[k] * inv, 0.6);
+    img.data[4 * k] = r; img.data[4 * k + 1] = g; img.data[4 * k + 2] = b; img.data[4 * k + 3] = Math.round(235 * a);
+  }
+  hctx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(husCanvas, X(-PI), Y(pb), X(PI) - X(-PI), Y(-pb) - Y(pb));
+}
+function drawPotential(ctx, X, Y) {
+  ctx.strokeStyle = C.pot; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let i = 0; i <= 240; i++) { const x = -PI + i / 240 * TAU, y = -Math.cos(x); i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)); }
+  ctx.stroke();
+}
+function drawEnergyLine(ctx, X, Y, E, col) {
+  for (const allowed of [true, false]) {
+    ctx.strokeStyle = col; ctx.lineWidth = allowed ? 1.2 : 1; ctx.setLineDash(allowed ? [] : [1.5, 3.5]);
+    ctx.beginPath(); let on = false;
+    for (let i = 0; i <= 360; i++) {
+      const x = -PI + i / 360 * TAU, ok = (E >= -Math.cos(x) - 1e-9) === allowed;
+      if (ok) { on ? ctx.lineTo(X(x), Y(E)) : ctx.moveTo(X(x), Y(E)); on = true; } else on = false;
+    }
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+const regimeOf = E => Math.abs(E - 1) < 0.015 ? "sep" : (E < 1 ? "osc" : "rot");
+const REG_LABEL = { osc: "oscillation", sep: "separatrix", rot: "rotation" };
+function fmt(v, d) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(d); }
+
+/* ================= TAB 1: quantized orbits ================= */
+let T1 = null;
+function setup1() {
+  const D = diag(P.hbar);
+  let nShow = 0; while (nShow < D.n && D.E[nShow] < EMAX1) nShow++;
+  let below = 0; while (below < D.n && D.E[below] < 1) below++;
+  T1 = { D, nShow, below, bs: bsLevels(P.hbar, EMAX1), hus: null, husFor: -1 };
+  const lev = $("lev"); lev.max = Math.max(0, nShow - 1);
+  if (P.lev > nShow - 1) P.lev = Math.max(0, nShow - 1);
+  lev.value = P.lev;
+  $("rCount").textContent = below;
+  $("rCountBS").textContent = (16 / (TAU * P.hbar)).toFixed(1);
+  $("rBasis").textContent = D.n;
+}
+function selectedState() {
+  const D = T1.D, j = P.lev, c = column(D, j);
+  if (T1.husFor !== j && P.hus1) { T1.hus = husimi(D, c, null, 3.0, 110, 1); T1.husFor = j; }
+  return c;
+}
+function drawOrb() {
+  const { ctx, w, h } = prepCanvas($("cvOrb"));
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, pb = 3.0;
+  const { X, Y } = frame(ctx, box, [-PI, PI], [-pb, pb], Q_TICKS, intTicks(-3, 3, 1), "q", "p");
+  const E = T1.D.E[P.lev], col = C[regimeOf(E) === "rot" ? "rot" : "osc"];
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  if (P.hus1 && T1.hus) drawHusimi(ctx, X, Y, T1.hus, col);
+  if (P.orb) {
+    for (const L of T1.bs) {
+      drawLevel(ctx, X, Y, L.E, rgba(L.kind === "osc" ? C.osc : C.rot, 0.55), 0.9);
+    }
+  }
+  drawLevel(ctx, X, Y, 1, C.sep, 1.5);
+  // the classical orbit at the exact energy of the selected state
+  drawLevel(ctx, X, Y, E, C.fg, 1.8, [5, 3]);
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.textBaseline = "top";
+  drawRich(ctx, [["dashed: classical orbit at ", 0, 0], ["E", 0, 1], ["j", 1, 1]], box.l + box.w - 4, box.t + 4, 11, "right");
+}
+let spacingPts = [];
+function drawSpacing() {
+  const { ctx, w, h } = prepCanvas($("cvSpacing"));
+  const box = { l: 46, t: 10, w: w - 58, h: h - 52 }, D = T1.D, hb = P.hbar;
+  const xr = [-1, EMAX1];
+  let ymax = 1.15; for (let j = 0; j + 1 < T1.nShow; j++) ymax = Math.max(ymax, (D.E[j + 1] - D.E[j]) / hb * 1.06);
+  ymax = Math.min(ymax, 4);
+  const yt = intTicks(0, ymax, ymax > 2.2 ? 1 : 0.5), ymin = -0.06 * ymax;
+  const { X, Y } = frame(ctx, box, xr, [ymin, ymax], intTicks(-1, EMAX1, 1), yt, [["E", 0, 1], [" / ", 0, 0], ["λ", 0, 1]],
+    [["(", 0, 0], ["E", 0, 1], ["j+1", 1, 1], [" − ", 0, 0], ["E", 0, 1], ["j", 1, 1], [") / ħω", 0, 0], ["p", 1, 1]], true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 6, box.w + 6, box.h + 6); ctx.clip();
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  for (const [v] of yt) { ctx.beginPath(); ctx.moveTo(box.l, Y(v)); ctx.lineTo(box.l + box.w, Y(v)); ctx.stroke(); }
+  ctx.strokeStyle = C.sep; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(X(1), box.t); ctx.lineTo(X(1), box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = C.sep; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText("separatrix", X(1) + 4, box.t + 2);
+  if (P.curve) {
+    // ħω_cl(E)/ħω_p = ω_cl(E) = 2π/T(E)
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    for (let i = 0; i <= 300; i++) { const E = -1 + 1e-6 + i / 300 * (2 - 2e-6); const v = TAU / Tosc(E); i ? ctx.lineTo(X(E), Y(v)) : ctx.moveTo(X(E), Y(v)); }
+    ctx.stroke(); ctx.beginPath();
+    for (let i = 0; i <= 300; i++) { const E = 1 + 1e-6 + i / 300 * (EMAX1 - 1); const v = TAU / Trot(E); i ? ctx.lineTo(X(E), Y(v)) : ctx.moveTo(X(E), Y(v)); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  spacingPts = [];
+  for (let j = 0; j + 1 < T1.nShow; j++) {
+    const Em = 0.5 * (D.E[j] + D.E[j + 1]), v = (D.E[j + 1] - D.E[j]) / hb;
+    spacingPts.push([X(Em), Y(Math.min(v, ymax)), j]);
+  }
+  for (const [x, y, j] of spacingPts) {
+    const sel = j === P.lev || j + 1 === P.lev;
+    ctx.beginPath(); ctx.arc(x, y, sel ? 5 : 3.6, 0, TAU);
+    ctx.fillStyle = sel ? C.fg : C.accent; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = C.surface; ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawState() {
+  const { ctx, w, h } = prepCanvas($("cvState"));
+  const box = { l: 44, t: 8, w: w - 54, h: h - 50 }, D = T1.D, j = P.lev, E = D.E[j];
+  const c = selectedState(), rho = densityOnGrid(D, c, null);
+  let rmax = 0; for (const v of rho) rmax = Math.max(rmax, v);
+  const top = Math.max(1.4, E + 1.25), yr = [-1.3, top];
+  const { X, Y } = frame(ctx, box, [-PI, PI], yr, Q_TICKS, intTicks(-1, top, 1), "q", "energy / λ", true);
+  const reg = regimeOf(E), col = reg === "rot" ? C.rot : (reg === "sep" ? C.sep : C.osc);
+  const scale = (top - E - 0.1) / rmax;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 2, box.w, box.h + 2); ctx.clip();
+  drawPotential(ctx, X, Y);
+  drawEnergyLine(ctx, X, Y, E, col);
+  ctx.beginPath(); ctx.moveTo(X(-PI), Y(E));
+  for (let i = 0; i <= NQ; i++) ctx.lineTo(X(QGRID[i]), Y(E + scale * rho[i]));
+  ctx.lineTo(X(PI), Y(E)); ctx.closePath(); ctx.fillStyle = rgba(col, 0.2); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let i = 0; i <= NQ; i++) { const x = X(QGRID[i]), y = Y(E + scale * rho[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  // WKB / classical density: 2/(T v) for oscillations, 1/(T v) for rotations
+  if (Math.abs(E - 1) > 1e-3) {
+    const T = E < 1 ? Tosc(E) : Trot(E), pref = E < 1 ? 2 / T : 1 / T;
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]); ctx.beginPath(); let on = false;
+    for (let i = 0; i <= 600; i++) {
+      const q = -PI + i / 600 * TAU, s = 2 * (E + Math.cos(q));
+      if (s > 1e-6) { const v = pref / Math.sqrt(s), y = Y(E + scale * Math.min(v, 3 * rmax)); on ? ctx.lineTo(X(q), y) : ctx.moveTo(X(q), y); on = true; } else on = false;
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.restore();
+  // info
+  let best = null; for (const L of T1.bs) if (!best || Math.abs(L.E - E) < Math.abs(best.E - E)) best = L;
+  const chip = $("rReg1"); chip.textContent = REG_LABEL[reg]; chip.style.color = col;
+  let info = `j = ${j}: E = ${fmt(E, 4)} λ`;
+  if (best) {
+    const lab = best.kind === "osc" ? `n = ${best.n}, (n+½)h` : `|n| = ${best.n}, nh`;
+    info += ` · nearest WKB (${lab}): ${fmt(best.E, 4)} λ`;
+  }
+  $("levInfo").textContent = info;
+  $("levv").textContent = j;
+}
+function drawAll1() { drawOrb(); drawSpacing(); drawState(); }
+
+/* ================= TAB 2: collapse and revival ================= */
+let T2 = null;
+function setup2() {
+  const D = diag(P.hbar), { n, Nb, V, E } = D, h = P.hbar;
+  // initial periodized Gaussian centred at x0, k0 = 0: c_n ∝ exp(-ħw n²/2 - i n x0)
+  const cr = new Float64Array(n), ci = new Float64Array(n); let nrm = 0;
+  for (let b = 0; b < n; b++) { const nn = b - Nb, a = Math.exp(-0.5 * h * P.w * nn * nn); cr[b] = a * Math.cos(nn * P.x0); ci[b] = -a * Math.sin(nn * P.x0); nrm += a * a; }
+  nrm = 1 / Math.sqrt(nrm); for (let b = 0; b < n; b++) { cr[b] *= nrm; ci[b] *= nrm; }
+  // amplitudes on the eigenbasis, keep the populated levels
+  const keep = [];
+  let Ebar = 0, E2 = 0;
+  for (let j = 0; j < n; j++) {
+    let ar = 0, ai = 0; for (let b = 0; b < n; b++) { const v = V[b * n + j]; ar += v * cr[b]; ai += v * ci[b]; }
+    const p = ar * ar + ai * ai;
+    if (p > 1e-9) keep.push({ j, ar, ai, p, E: E[j] });
+    Ebar += p * E[j]; E2 += p * E[j] * E[j];
+  }
+  const K = keep.length;
+  for (const k of keep) {               // support of each eigenvector in the momentum basis
+    let bl = 0, bh = n - 1; while (bl < n && Math.abs(V[bl * n + k.j]) < 1e-9) bl++; while (bh > bl && Math.abs(V[bh * n + k.j]) < 1e-9) bh--;
+    k.bl = bl; k.bh = bh;
+  }
+  let nbar = 0, n2 = 0; for (const k of keep) { nbar += k.p * k.j; n2 += k.p * k.j * k.j; }
+  const sig = Math.sqrt(Math.max(n2 - nbar * nbar, 0));
+  // characteristic times
+  const n0 = Math.max(1, Math.round(nbar));
+  const Om = (E[n0 + 1] - E[n0 - 1]) / (2 * h);                     // ω_cl at n̄ from exact levels
+  const Tcl = TAU / Om;
+  const Trev = 32 * PI / h;                                          // quartic estimate (B2 b)
+  const Tcoll = 8 / (h * Math.max(sig, 1e-3));                       // ħ/(|E''| σ_n), E'' = ħ²/8
+  const curv = Math.abs(E[n0 + 1] - 2 * E[n0] + E[n0 - 1]);
+  const TrevX = 4 * PI * h / Math.max(curv, 1e-12);                  // from the exact levels near n̄
+  const tEnd = 1.12 * Trev;
+  // <e^{iq}> = Σ_{jl} conj(a_j) a_l M_jl e^{i(E_j-E_l)t/ħ},  M_jl = Σ_n V[n,j] V[n-1,l]
+  const NS = 14000, dt = tEnd / (NS - 1), tr = new Float64Array(NS);
+  for (let x = 0; x < K; x++) for (let y = 0; y < K; y++) {
+    const jx = keep[x].j, jy = keep[y].j;
+    let M = 0; for (let b = 1; b < n; b++) M += V[b * n + jx] * V[(b - 1) * n + jy];
+    if (Math.abs(M) < 1e-12) continue;
+    // conj(a_x) a_y M
+    let zr = (keep[x].ar * keep[y].ar + keep[x].ai * keep[y].ai) * M;
+    let zi = (keep[x].ar * keep[y].ai - keep[x].ai * keep[y].ar) * M;
+    const om = (keep[x].E - keep[y].E) / h, wr = Math.cos(om * dt), wi = Math.sin(om * dt);
+    for (let s = 0; s < NS; s++) { tr[s] += zi; const t = zr * wr - zi * wi; zi = zr * wi + zi * wr; zr = t; }
+  }
+  // actual first revival: largest envelope after the collapse, before 0.75 T_rev
+  let peakT = Trev / 2;
+  {
+    const win = Math.max(3, Math.round(Tcl / dt)), from = Math.round(Math.min(3 * Tcoll, 0.3 * Trev) / dt), to = Math.round(0.75 * Trev / dt);
+    let best = -1;
+    for (let s = from; s < Math.min(to, NS - win); s += Math.max(1, win >> 2)) {
+      let m = 0; for (let u = s; u < s + win; u++) m = Math.max(m, Math.abs(tr[u]));
+      if (m > best) { best = m; peakT = (s + win / 2) * dt; }
+    }
+  }
+  // phase-clock frame: levels shown and linear reference
+  let pmax = 0; for (const k of keep) pmax = Math.max(pmax, k.p);
+  const shown = keep.filter(k => k.p > 0.004 * pmax).slice(0, 48);
+  T2 = { D, keep, shown, cr, ci, Ebar, dE: Math.sqrt(Math.max(E2 - Ebar * Ebar, 0)), nbar, sig, n0, Om, Tcl, Trev, Tcoll, tEnd,
+         NS, dt, tr, peakT, TrevX, t: 0, rho0max: 0, husNeeded: true };
+  // reference density scale from t = 0
+  const st = stateAt(0, false); let m = 0; for (const v of densityOnGrid(D, st.re, st.im, st.lo, st.hi)) m = Math.max(m, v); T2.rho0max = m;
+  $("rN").textContent = nbar.toFixed(2); $("rS").textContent = sig.toFixed(2);
+  $("rTcl").textContent = Tcl.toFixed(2); $("rTcoll").textContent = Tcoll.toFixed(0); $("rTrev").textContent = Trev.toFixed(0); $("rTrev2").textContent = TrevX.toFixed(0);
+  $("rBasis").textContent = D.n;
+  $("tScrub").max = tEnd; $("tScrub").step = tEnd / 4000;
+}
+// state at time t; with corot, the uniform rotation at ω_cl(n̄) is removed (exact at t = k T_cl)
+function stateAt(t, corot) {
+  const { D, keep, n0, Om } = T2, { n, V, E } = D, h = P.hbar, re = new Float64Array(n), im = new Float64Array(n);
+  let lo = n, hi = -1;
+  for (const k of keep) {
+    const Eeff = corot ? k.E - E[n0] - (k.j - n0) * h * Om : k.E;
+    const ph = -Eeff * t / h, c = Math.cos(ph), s = Math.sin(ph), ar = k.ar * c - k.ai * s, ai = k.ar * s + k.ai * c;
+    for (let b = k.bl; b <= k.bh; b++) { const v = V[b * n + k.j]; re[b] += v * ar; im[b] += v * ai; }
+    if (k.bl < lo) lo = k.bl; if (k.bh > hi) hi = k.bh;
+  }
+  return { re, im, lo, hi };
+}
+function drawPhase2(st) {
+  const { ctx, w, h } = prepCanvas($("cvPhase2"));
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, pb = 2.6;
+  const { X, Y } = frame(ctx, box, [-PI, PI], [-pb, pb], Q_TICKS, intTicks(-2, 2, 1), "q", "p");
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  const H = husimi(T2.D, st.re, st.im, pb, 96, 1, st.lo, st.hi);
+  drawHusimi(ctx, X, Y, H, C.osc);
+  for (const Ev of [-0.8, -0.4, 0, 0.4, 0.8, 1.6]) drawLevel(ctx, X, Y, Ev, rgba(C.pot, 0.3), 0.8);
+  drawLevel(ctx, X, Y, 1, C.sep, 1.3);
+  drawLevel(ctx, X, Y, T2.Ebar, C.fg, 1.3, [5, 4]);
+  ctx.restore();
+}
+function drawPos2(st) {
+  const { ctx, w, h } = prepCanvas($("cvPos2"));
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, E = T2.Ebar;
+  const top = Math.max(1.6, E + 1.15), yr = [-1.35, top];
+  const { X, Y } = frame(ctx, box, [-PI, PI], yr, Q_TICKS, intTicks(-1, top, 1), "q", "energy / λ", true);
+  const rho = densityOnGrid(T2.D, st.re, st.im, st.lo, st.hi), scale = 0.95 / T2.rho0max, col = C.osc;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 2, box.w, box.h + 2); ctx.clip();
+  drawPotential(ctx, X, Y); drawEnergyLine(ctx, X, Y, E, col);
+  ctx.beginPath(); ctx.moveTo(X(-PI), Y(E));
+  for (let i = 0; i <= NQ; i++) ctx.lineTo(X(QGRID[i]), Y(E + scale * rho[i]));
+  ctx.lineTo(X(PI), Y(E)); ctx.closePath(); ctx.fillStyle = rgba(col, 0.22); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
+  for (let i = 0; i <= NQ; i++) { const x = X(QGRID[i]), y = Y(E + scale * rho[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawClocks(t) {
+  const { ctx, w, h } = prepCanvas($("cvClock"));
+  const sh = T2.shown, K = sh.length; if (!K) return;
+  const box = { l: 44, t: 8, w: w - 54, h: h - 36 };
+  const E = T2.D.E, h_ = P.hbar, n0 = T2.n0, Om = T2.Om;
+  let pmax = 0; for (const k of sh) pmax = Math.max(pmax, k.p);
+  const slot = box.w / K, rad = Math.max(4, Math.min(slot * 0.38, box.h * 0.17, 16));
+  const barTop = box.t + 2 * rad + 8, barH = box.t + box.h - barTop;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(box.l, box.t + box.h); ctx.lineTo(box.l + box.w, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const every = Math.ceil(K / Math.max(1, Math.floor(box.w / 26)));
+  for (let i = 0; i < K; i++) {
+    const k = sh[i], cx = box.l + (i + 0.5) * slot;
+    const bh = barH * k.p / pmax, bw = Math.max(2, Math.min(slot * 0.55, 18));
+    ctx.fillStyle = rgba(C.osc, 0.85);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - bw / 2, box.t + box.h - bh, bw, bh, [3, 3, 0, 0]) : ctx.rect(cx - bw / 2, box.t + box.h - bh, bw, bh); ctx.fill();
+    if (i % every === 0) { ctx.fillStyle = C.muted; ctx.fillText(String(k.j), cx, box.t + box.h + 4); }
+    // phase relative to uniform rotation at ω_cl(n̄)
+    const th = -(k.E - E[n0] - (k.j - n0) * h_ * Om) * t / h_;
+    const cy = box.t + rad + 2;
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + rad * Math.sin(th), cy - rad * Math.cos(th)); ctx.stroke();
+  }
+  ctx.fillStyle = C.muted; ctx.font = MFONT(13); ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+  ctx.fillText("n", box.l + box.w + 2, box.t + box.h + 16);
+}
+let traceBox = null;
+let traceCache = null;
+function drawTrace(tNow) {
+  const cv = $("cvTrace"), { ctx, w, h } = prepCanvas(cv);
+  const box = { l: 46, t: 14, w: w - 58, h: h - 52 }, { tr, NS, dt, tEnd } = T2;
+  traceBox = box;
+  const X = v => box.l + v / tEnd * box.w, Y = v => box.t + (1 - (v + 1) / 2) * box.h;
+  if (!traceCache || traceCache.T2 !== T2 || traceCache.W !== cv.width || traceCache.H !== cv.height || traceCache.fg !== C.fg) {
+    const off = document.createElement("canvas"); off.width = cv.width; off.height = cv.height;
+    const octx = off.getContext("2d"), dpr = cv.width / w; octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawTraceStatic(octx, box);
+    traceCache = { T2, W: cv.width, H: cv.height, fg: C.fg, off };
+  }
+  ctx.drawImage(traceCache.off, 0, 0, w, h);
+  // cursor
+  const x = X(tNow); ctx.strokeStyle = C.fg; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, box.t); ctx.lineTo(x, box.t + box.h); ctx.stroke();
+  const s = Math.min(NS - 1, Math.round(tNow / dt)); ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(x, Y(tr[s]), 3.5, 0, TAU); ctx.fill();
+}
+function drawTraceStatic(ctx, box) {
+  const { tr, NS, tEnd, Trev, Tcoll } = T2;
+  const step = tEnd > 3000 ? 1000 : (tEnd > 1500 ? 500 : (tEnd > 600 ? 200 : 100));
+  const { X, Y } = frame(ctx, box, [0, tEnd], [-1, 1], intTicks(0, tEnd, step), [[-1, "−1"], [-0.5, "−0.5"], [0, "0"], [0.5, "0.5"], [1, "1"]], [["ω", 0, 1], ["p", 1, 1], [" t", 0, 1]], "⟨sin q⟩");
+  // envelope rendering: min/max of the samples falling in each pixel column
+  const cols = Math.max(1, Math.floor(box.w));
+  ctx.strokeStyle = C.osc; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 0; c < cols; c++) {
+    const s0 = Math.floor(c / cols * NS), s1 = Math.max(s0 + 1, Math.floor((c + 1) / cols * NS));
+    let lo = Infinity, hi = -Infinity; for (let s = s0; s < s1 && s < NS; s++) { if (tr[s] < lo) lo = tr[s]; if (tr[s] > hi) hi = tr[s]; }
+    const x = box.l + c + 0.5; ctx.moveTo(x, Y(hi) - 0.5); ctx.lineTo(x, Y(lo) + 0.5);
+  }
+  ctx.stroke();
+  ctx.font = FONT(11); ctx.textBaseline = "top"; ctx.textAlign = "center";
+  const T = [["T", 0, 1]], marks = [[Tcoll, [...T, ["coll", 1, 0]]], [Trev / 4, [...T, ["rev", 1, 0], ["/4", 0, 0]]],
+    [Trev / 2, [...T, ["rev", 1, 0], ["/2", 0, 0]]], [Trev, [...T, ["rev", 1, 0]]]];
+  let lastX = -1e9;
+  for (const [tm, lab] of marks) {
+    if (tm > tEnd) continue;
+    const x = X(tm); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, box.t); ctx.lineTo(x, box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
+    if (x - lastX > 44) { ctx.fillStyle = C.muted; drawRich(ctx, lab, x, 0, 11, "center"); lastX = x; }
+  }
+}
+function drawAll2() {
+  if (!T2) return;
+  const t = T2.t, st = stateAt(t, P.strobe);
+  drawPhase2(st); drawPos2(st); drawClocks(t); drawTrace(t);
+  $("rT").textContent = t.toFixed(1);
+  if (document.activeElement !== $("tScrub")) $("tScrub").value = T2.t;
+}
+
+/* ================= UI ================= */
+function labels() {
+  $("hbv").textContent = P.hbar < 0.1 ? P.hbar.toFixed(3) : P.hbar.toFixed(2);
+  $("x0v").textContent = P.x0.toFixed(2);
+  $("wwv").textContent = P.w.toFixed(2);
+  $("spv").textContent = P.speed.toFixed(2) + "×";
+  const sq = Math.sqrt(P.hbar * P.w / 2), sp = Math.sqrt(P.hbar / (2 * P.w));
+  $("wHint").innerHTML = `σ<sub>q</sub>(0) = ${sq.toFixed(3)}, σ<sub>p</sub>(0) = ${sp.toFixed(3)}${Math.abs(P.w - 1) < 0.02 ? " · coherent state of the harmonic approximation" : ""}`;
+}
+function syncInputs() {
+  $("hb").value = uFromHb(P.hbar); $("x0").value = P.x0; $("ww").value = uFromW(P.w);
+  $("sp").value = (Math.log10(P.speed) + 1.5) / 3; $("lev").value = P.lev; $("lStrobe").checked = P.strobe;
+  labels();
+}
+function markPresets() {
+  for (const b of document.querySelectorAll("[data-preset1]")) b.setAttribute("aria-pressed", String(Math.abs(PRESETS1[b.dataset.preset1] - P.hbar) < 1e-9));
+  for (const b of document.querySelectorAll("[data-preset2]")) { const pr = PRESETS2[b.dataset.preset2]; b.setAttribute("aria-pressed", String(Math.abs(pr.h - P.hbar) < 1e-9 && Math.abs(pr.x0 - P.x0) < 1e-9 && Math.abs(pr.w - P.w) < 1e-9)); }
+}
+let dirty1 = true, dirty2 = true;
+function refresh() {
+  if (P.tab === 1) { if (dirty1) { setup1(); dirty1 = false; } drawAll1(); }
+  else { if (dirty2) { setup2(); dirty2 = false; } drawAll2(); }
+  markPresets();
+}
+function setTab(k) {
+  P.tab = k;
+  for (const [id, n] of [["tab1", 1], ["tab2", 2]]) { const b = $(id); b.setAttribute("aria-selected", String(n === k)); b.tabIndex = n === k ? 0 : -1; }
+  for (const el of document.querySelectorAll("[data-tab]")) el.hidden = +el.dataset.tab !== k;
+  $("plots1").hidden = k !== 1; $("plots2").hidden = k !== 2;
+  $("tb1").hidden = k !== 1; $("tb2").hidden = k !== 2;
+  $("notes1").hidden = k !== 1; $("notes2").hidden = k !== 2;
+  if (k === 1) setPlay(false);
+  refresh();
+}
+$("tab1").addEventListener("click", () => setTab(1));
+$("tab2").addEventListener("click", () => setTab(2));
+$("tab1").parentElement.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const k = P.tab === 1 ? 2 : 1; setTab(k); $("tab" + k).focus(); e.preventDefault(); }
+});
+for (const b of document.querySelectorAll("[data-preset1]")) b.addEventListener("click", () => {
+  P.hbar = PRESETS1[b.dataset.preset1]; dirty1 = dirty2 = true; syncInputs(); refresh();
+});
+for (const b of document.querySelectorAll("[data-preset2]")) b.addEventListener("click", () => {
+  const pr = PRESETS2[b.dataset.preset2]; P.hbar = pr.h; P.x0 = pr.x0; P.w = pr.w; dirty1 = dirty2 = true; syncInputs(); refresh();
+});
+$("hb").addEventListener("input", () => { P.hbar = +hbFromU(+$("hb").value).toPrecision(3); dirty1 = dirty2 = true; labels(); refresh(); });
+$("lev").addEventListener("input", () => { P.lev = +$("lev").value; refresh(); });
+$("lOrb").addEventListener("change", e => { P.orb = e.target.checked; refresh(); });
+$("lHus1").addEventListener("change", e => { P.hus1 = e.target.checked; T1.husFor = -1; refresh(); });
+$("lCurve").addEventListener("change", e => { P.curve = e.target.checked; refresh(); });
+$("x0").addEventListener("input", () => { P.x0 = +$("x0").value; dirty2 = true; labels(); refresh(); });
+$("ww").addEventListener("input", () => { P.w = +wFromU(+$("ww").value).toPrecision(3); dirty2 = true; labels(); refresh(); });
+$("sp").addEventListener("input", () => { P.speed = spFromU(+$("sp").value); labels(); });
+$("lStrobe").addEventListener("change", e => { P.strobe = e.target.checked; refresh(); });
+$("tScrub").addEventListener("input", () => { setPlay(false); T2.t = +$("tScrub").value; drawAll2(); });
+for (const b of document.querySelectorAll("[data-jump]")) b.addEventListener("click", () => {
+  const k = b.dataset.jump, m = { 0: 0, coll: T2.Tcoll, q: T2.TrevX / 4, h: T2.TrevX / 2, f: T2.TrevX, peak: T2.peakT };
+  setPlay(false); T2.t = Math.min(m[k], T2.tEnd); drawAll2();
+});
+function selectSpacing(ev) {
+  const r = $("cvSpacing").getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  let best = null, bd = 1e9; for (const [px, py, j] of spacingPts) { const d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = j; } }
+  if (best !== null && bd < 40) { P.lev = best; $("lev").value = best; refresh(); }
+}
+$("cvSpacing").addEventListener("click", selectSpacing);
+$("cvSpacing").addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowUp") { P.lev = Math.min(+$("lev").max, P.lev + 1); }
+  else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { P.lev = Math.max(0, P.lev - 1); } else return;
+  $("lev").value = P.lev; e.preventDefault(); refresh();
+});
+$("cvTrace").addEventListener("click", ev => {
+  if (!traceBox) return;
+  const r = $("cvTrace").getBoundingClientRect(), x = ev.clientX - r.left;
+  const t = (x - traceBox.l) / traceBox.w * T2.tEnd; setPlay(false); T2.t = Math.max(0, Math.min(T2.tEnd, t)); drawAll2();
+});
+
+let playing = false;
+const setPlay = v => { playing = v; $("play").textContent = v ? "Pause" : "Play"; };
+$("play").addEventListener("click", () => { if (T2 && T2.t >= T2.tEnd - 1e-9) T2.t = 0; setPlay(!playing); });
+$("restart").addEventListener("click", () => { T2.t = 0; drawAll2(); });
+
+let last = performance.now();
+function loop(now) {
+  const dtReal = Math.min((now - last) / 1000, 0.05); last = now;
+  if (playing && P.tab === 2 && T2) {
+    // speed 1×: the full run (≈ 1.1 T_rev) takes about 40 s
+    T2.t += dtReal * P.speed * T2.tEnd / 40;
+    if (T2.t >= T2.tEnd) { T2.t = T2.tEnd; setPlay(false); }
+    drawAll2();
+  }
+  requestAnimationFrame(loop);
+}
+
+const themeChange = () => { readColors(); refresh(); };
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeChange);
+new MutationObserver(themeChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+let rz = 0; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => refresh()); }).observe(document.querySelector(".viz"));
+
+readColors(); syncInputs(); setTab(1);
+requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
+
+// hook for testing
+window.pendulum = { P, diag, bsLevels, Sosc, Srot, Tosc, Trot, get T1() { return T1; }, get T2() { return T2; }, setTab, refresh, stateAt };
+})();
+</script>
+</body>
+</html>
