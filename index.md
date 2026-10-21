@@ -47,7 +47,7 @@
   
   If you're here, there is non-zero probability that you want to contact me. If so, I can be contacted through email at `jaydevsingh.rao[α]kuleuven[∘]be` for work or `jaydevsrao[α]gmail[∘]com` for non-work. Alternatively, you can directly schedule a meeting with me using the link below.
 
-  **Schedule a meeting with me**: [reserve a 30 min slot here](https://calendar.notion.so/meet/jaydev/slots)
+  <!-- **Schedule a meeting with me**: [reserve a 30 min slot here](https://calendar.notion.so/meet/jaydev/slots) -->
 \end{biography}
 
 \shortcv{
