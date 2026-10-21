@@ -216,7 +216,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <button type="button" data-jump="f"><span class="m">T</span><sub>rev</sub></button>
           <button type="button" data-jump="peak">1st peak</button>
         </div>
-        <p class="hint">Jumps use <span class="m">T</span><sub>rev</sub> from the curvature of the exact levels at <span class="m">n̄</span>; the dashed markers in the trace are the quartic estimates of B2(b, c).</p>
+        <p class="hint">Jumps use <span class="m">T</span><sub>rev</sub> = 4πħ/|<span class="m">E</span>″| from the curvature of the exact levels at <span class="m">n̄</span> (solid green in the trace); the dashed markers are the quartic estimates of B2(b, c).</p>
       </section>
       <section class="group" data-tab="2" hidden>
         <h2>Playback</h2>
@@ -289,7 +289,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <canvas id="cvClock" class="r_clock" role="img" aria-label="Occupation of each energy level, with a clock hand showing its phase relative to uniform classical rotation"></canvas>
         </figure>
         <figure class="panel wide">
-          <header><h3>⟨sin <span class="m">q̂</span>⟩ over the full run</h3><div class="key"><span>exact</span><span><span class="swatch dash"></span> quartic estimates</span><span>click to jump</span></div></header>
+          <header><h3>⟨sin <span class="m">q̂</span>⟩ over the full run</h3><div class="key"><span><span class="swatch dash"></span> quartic estimates</span><span><span class="swatch" style="border-top-color:var(--rot)"></span> from the exact levels at <span class="m">n̄</span></span><span>click to jump</span></div></header>
           <canvas id="cvTrace" class="r_trace" tabindex="0" role="img" aria-label="Expectation value of sin q against time, showing collapse and revivals. Click to jump in time."></canvas>
         </figure>
       </div>
@@ -816,11 +816,12 @@ function drawClocks(t) {
 }
 let traceBox = null;
 let traceCache = null;
+const TR_LO = -1.22;            // room below −1 for the exact-level labels
 function drawTrace(tNow) {
   const cv = $("cvTrace"), { ctx, w, h } = prepCanvas(cv);
   const box = { l: 46, t: 14, w: w - 58, h: h - 52 }, { tr, NS, dt, tEnd } = T2;
   traceBox = box;
-  const X = v => box.l + v / tEnd * box.w, Y = v => box.t + (1 - (v + 1) / 2) * box.h;
+  const X = v => box.l + v / tEnd * box.w, Y = v => box.t + (1 - (v - TR_LO) / (1 - TR_LO)) * box.h;
   if (!traceCache || traceCache.T2 !== T2 || traceCache.W !== cv.width || traceCache.H !== cv.height || traceCache.fg !== C.fg) {
     const off = document.createElement("canvas"); off.width = cv.width; off.height = cv.height;
     const octx = off.getContext("2d"), dpr = cv.width / w; octx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -833,9 +834,9 @@ function drawTrace(tNow) {
   const s = Math.min(NS - 1, Math.round(tNow / dt)); ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(x, Y(tr[s]), 3.5, 0, TAU); ctx.fill();
 }
 function drawTraceStatic(ctx, box) {
-  const { tr, NS, tEnd, Trev, Tcoll } = T2;
+  const { tr, NS, tEnd, Trev, Tcoll, TrevX } = T2;
   const step = tEnd > 3000 ? 1000 : (tEnd > 1500 ? 500 : (tEnd > 600 ? 200 : 100));
-  const { X, Y } = frame(ctx, box, [0, tEnd], [-1, 1], intTicks(0, tEnd, step), [[-1, "−1"], [-0.5, "−0.5"], [0, "0"], [0.5, "0.5"], [1, "1"]], [["ω", 0, 1], ["p", 1, 1], [" t", 0, 1]], "⟨sin q⟩");
+  const { X, Y } = frame(ctx, box, [0, tEnd], [TR_LO, 1], intTicks(0, tEnd, step), [[-1, "−1"], [-0.5, "−0.5"], [0, "0"], [0.5, "0.5"], [1, "1"]], [["ω", 0, 1], ["p", 1, 1], [" t", 0, 1]], "⟨sin q⟩");
   // envelope rendering: min/max of the samples falling in each pixel column
   const cols = Math.max(1, Math.floor(box.w));
   ctx.strokeStyle = C.osc; ctx.lineWidth = 1; ctx.beginPath();
@@ -854,6 +855,14 @@ function drawTraceStatic(ctx, box) {
     const x = X(tm); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
     ctx.beginPath(); ctx.moveTo(x, box.t); ctx.lineTo(x, box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
     if (x - lastX > 44) { ctx.fillStyle = C.muted; drawRich(ctx, lab, x, 0, 11, "center"); lastX = x; }
+  }
+  // revival times from the curvature of the exact levels at n̄ (labels along the bottom)
+  ctx.textBaseline = "bottom"; lastX = -1e9;
+  for (const [tm, lab] of [[TrevX / 4, [...T, ["rev", 1, 0], ["/4", 0, 0]]], [TrevX / 2, [...T, ["rev", 1, 0], ["/2", 0, 0]]], [TrevX, [...T, ["rev", 1, 0]]]]) {
+    if (tm > tEnd) continue;
+    const x = X(tm); ctx.strokeStyle = C.rot; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x, box.t); ctx.lineTo(x, box.t + box.h); ctx.stroke();
+    if (x - lastX > 44) { ctx.fillStyle = C.rot; drawRich(ctx, lab, x - 3, box.t + box.h - 5, 11, "right"); lastX = x; }
   }
 }
 function drawAll2() {
