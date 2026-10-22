@@ -76,6 +76,7 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 
 .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .presets button { display: grid; gap: 1px; text-align: left; }
 .presets button small { color: var(--muted); font-size: 11.5px; font-family: var(--font-data); }
+.presets .span2 { grid-column: 1 / -1; }
 .presets button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 button {
   font: inherit; font-size: 14px; color: var(--fg); background: var(--bg);
@@ -161,14 +162,15 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
       <section class="group" data-tab="2" hidden>
         <h2>Start from</h2>
         <div class="presets" role="group" aria-label="Presets for the revival view">
-          <button type="button" data-preset2="sheet" aria-pressed="true">Sheet Fig. 2<small>ħ 0.1 · x<sub>0</sub> 0.8</small></button>
+          <button type="button" data-preset2="sheet" aria-pressed="true">Pendulum<small>ħ 0.1 · x<sub>0</sub> 0.8</small></button>
           <button type="button" data-preset2="small" aria-pressed="false">Smaller ħ<small>ħ 0.05</small></button>
           <button type="button" data-preset2="large" aria-pressed="false">Large swing<small>x<sub>0</sub> 1.8</small></button>
           <button type="button" data-preset2="squeezed" aria-pressed="false">Squeezed<small>w 2.5</small></button>
+          <button type="button" class="span2" data-preset2="ring" aria-pressed="false">Free ring (λ = 0)<small>N 30 · Δ 10 · as in the sheet</small></button>
         </div>
       </section>
 
-      <section class="group">
+      <section class="group" id="gHbar">
         <h2>Quantum scale</h2>
         <div class="slider">
           <label for="hb"><span>Planck constant <span class="m">ħ</span><sub>eff</sub></span><output id="hbv" for="hb"></output></label>
@@ -194,7 +196,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
       </section>
 
       <!-- tab 2 -->
-      <section class="group" data-tab="2" hidden>
+      <section class="group" data-tab="2" id="gCoh" hidden>
         <h2>Initial coherent state</h2>
         <div class="slider">
           <label for="x0"><span>Angle <span class="m">x</span><sub>0</sub> (with <span class="m">k</span><sub>0</sub> = 0)</span><output id="x0v" for="x0"></output></label>
@@ -206,6 +208,18 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <p class="hint" id="wHint"></p>
         </div>
       </section>
+      <section class="group" data-tab="2" id="gRing" hidden>
+        <h2>Initial state on the ring</h2>
+        <p class="hint">ψ<sub>0</sub>(<span class="m">q</span>) = Σ<sub><span class="m">n</span>=<span class="m">N</span></sub><sup><span class="m">N</span>+Δ−1</sup> <span class="m">e</span><sup><span class="m">inq</span></sup>/√(2πΔ), with <span class="m">E<sub>n</sub></span> = ħ²<span class="m">n</span>²/2<span class="m">I</span>.</p>
+        <div class="slider">
+          <label for="rN0"><span>Lowest level <span class="m">N</span></span><output id="rN0v" for="rN0"></output></label>
+          <input type="range" id="rN0" min="5" max="60" step="1" value="30">
+        </div>
+        <div class="slider">
+          <label for="rDl"><span>Number of levels Δ</span><output id="rDlv" for="rDl"></output></label>
+          <input type="range" id="rDl" min="2" max="24" step="1" value="10">
+        </div>
+      </section>
       <section class="group" data-tab="2" hidden>
         <h2>Jump to</h2>
         <div class="jumps" role="group" aria-label="Jump to a characteristic time">
@@ -214,9 +228,10 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <button type="button" data-jump="q"><span class="m">T</span><sub>rev</sub>/4</button>
           <button type="button" data-jump="h"><span class="m">T</span><sub>rev</sub>/2</button>
           <button type="button" data-jump="f"><span class="m">T</span><sub>rev</sub></button>
-          <button type="button" data-jump="peak">1st peak</button>
+          <button type="button" data-jump="peak" id="jPeak">1st peak</button>
         </div>
-        <p class="hint">Jumps use <span class="m">T</span><sub>rev</sub> = 4πħ/|<span class="m">E</span>″| from the curvature of the exact levels at <span class="m">n̄</span> (solid green in the trace); the dashed markers are the quartic estimates of B2(b, c).</p>
+        <p class="hint" id="jHintPend">Jumps use <span class="m">T</span><sub>rev</sub> = 4πħ/|<span class="m">E</span>″| from the curvature of the exact levels at <span class="m">n̄</span> (solid green in the trace); the dashed markers are the estimates from the quartic spectrum of the sheet.</p>
+        <p class="hint" id="jHintRing" hidden>On the free ring all of these times are exact: <span class="m">T</span><sub>coll</sub> ≈ 2π<span class="m">I</span>/ħΔ and <span class="m">T</span><sub>rev</sub> = 4π<span class="m">I</span>/ħ.</p>
       </section>
       <section class="group" data-tab="2" hidden>
         <h2>Playback</h2>
@@ -250,7 +265,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <span>σ<sub><span class="m">n</span></sub> = <span class="num" id="rS">—</span></span>
           <span><span class="m">T</span><sub>cl</sub> = <span class="num" id="rTcl">—</span></span>
           <span><span class="m">T</span><sub>coll</sub> ≈ <span class="num" id="rTcoll">—</span></span>
-          <span title="quartic estimate 32π/ħ, and from the curvature of the exact levels at n̄"><span class="m">T</span><sub>rev</sub> ≈ <span class="num" id="rTrev">—</span> <span class="hint">(quartic)</span> · <span class="num" id="rTrev2">—</span> <span class="hint">(exact levels)</span></span>
+          <span><span class="m">T</span><sub>rev</sub> ≈ <span class="num" id="rTrev">—</span> <span id="rTrevPend" title="quartic estimate 32π/ħ, and from the curvature of the exact levels at n̄"><span class="hint">(quartic)</span> · <span class="num" id="rTrev2">—</span> <span class="hint">(exact levels)</span></span><span id="rTrevRing" class="hint" hidden>(exact, 4π<span class="m">I</span>/ħ)</span></span>
         </div>
         <div class="scrub">
           <label for="tScrub">time</label>
@@ -281,7 +296,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <canvas id="cvPhase2" class="r43" role="img" aria-label="Husimi density of the evolving state in phase space"></canvas>
         </figure>
         <figure class="panel">
-          <header><h3>Position space</h3><div class="key"><span>|ψ(<span class="m">q</span>,<span class="m">t</span>)|² on its mean energy</span></div></header>
+          <header><h3>Position space</h3><div class="key"><span id="posKey">|ψ(<span class="m">q</span>,<span class="m">t</span>)|² on its mean energy</span></div></header>
           <canvas id="cvPos2" class="r43" role="img" aria-label="Probability density of the evolving state over the potential"></canvas>
         </figure>
         <figure class="panel wide">
@@ -289,7 +304,7 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
           <canvas id="cvClock" class="r_clock" role="img" aria-label="Occupation of each energy level, with a clock hand showing its phase relative to uniform classical rotation"></canvas>
         </figure>
         <figure class="panel wide">
-          <header><h3>⟨sin <span class="m">q̂</span>⟩ over the full run</h3><div class="key"><span><span class="swatch dash"></span> quartic estimates</span><span><span class="swatch" style="border-top-color:var(--rot)"></span> from the exact levels at <span class="m">n̄</span></span><span>click to jump</span></div></header>
+          <header><h3 id="trTitle">⟨sin <span class="m">q̂</span>⟩ over the full run</h3><div class="key" id="trKey"><span><span class="swatch dash"></span> quartic estimates</span><span><span class="swatch" style="border-top-color:var(--rot)"></span> from the exact levels at <span class="m">n̄</span></span><span>click to jump</span></div></header>
           <canvas id="cvTrace" class="r_trace" tabindex="0" role="img" aria-label="Expectation value of sin q against time, showing collapse and revivals. Click to jump in time."></canvas>
         </figure>
       </div>
@@ -304,11 +319,16 @@ footer p { margin: 0 0 4px; max-width: 100ch; }
   <section class="notes" id="notes2" aria-label="How to read the revival view" hidden>
     <p><strong>Collapse.</strong> The packet smears around its orbit because neighbouring levels are not equally spaced. The clock hands fan out at the same time.</p>
     <p><strong>Revival.</strong> At <span class="m">T</span><sub>rev</sub>/2 every phase is a multiple of π: hands near <span class="m">n̄</span> alternate up and down, and the packet re-forms half an orbit away. At <span class="m">T</span><sub>rev</sub>/4 the hands form two groups: a superposition of two packets. Hands far from <span class="m">n̄</span> drift off because of higher-order terms in <span class="m">E<sub>n</sub></span>.</p>
-    <p><strong>Markers.</strong> The dashed lines use the quartic spectrum of B1(b). The actual revivals come slightly earlier, because the levels near <span class="m">n̄</span> are more curved than the quartic estimate.</p>
+    <p><strong>Markers.</strong> The dashed lines use the quartic spectrum of the sheet. The actual revivals come slightly earlier, because the levels near <span class="m">n̄</span> are more curved than the quartic estimate.</p>
+  </section>
+  <section class="notes" id="notes3" aria-label="How to read the free-ring view" hidden>
+    <p><strong>Collapse.</strong> The packet contains angular velocities spread over ħΔ/<span class="m">I</span>, so it smears around the ring after <span class="m">T</span><sub>coll</sub> ≈ 2π<span class="m">I</span>/ħΔ, just as a classical ensemble of rotors would.</p>
+    <p><strong>Revival.</strong> <span class="m">E<sub>n</sub></span> is exactly quadratic, so the revivals are perfect. At <span class="m">T</span><sub>rev</sub> = 4π<span class="m">I</span>/ħ every phase is 1 and the state returns exactly; at <span class="m">T</span><sub>rev</sub>/2 the phases are (−1)<sup><span class="m">n</span></sup> and the packet reappears half a turn away.</p>
+    <p><strong>Cat state.</strong> At <span class="m">T</span><sub>rev</sub>/4 the state is a superposition of two packets on opposite sides of the ring. |⟨<span class="m">e<sup>iq̂</sup></span>⟩| is then almost zero even though the state is not spread out.</p>
   </section>
 
   <footer>
-    <p>Scaled units <span class="m">m</span> = <span class="m">λ</span> = 1: energies in units of <span class="m">λ</span>, momenta in units of √(<span class="m">mλ</span>), time in units of 1/ω<sub><span class="m">p</span></sub> = √(<span class="m">m</span>/<span class="m">λ</span>).</p>
+    <p>Scaled units <span class="m">m</span> = <span class="m">λ</span> = 1: energies in units of <span class="m">λ</span>, momenta in units of √(<span class="m">mλ</span>), time in units of 1/ω<sub><span class="m">p</span></sub> = √(<span class="m">m</span>/<span class="m">λ</span>). Free ring: ħ = <span class="m">I</span> = 1, so angular momenta are in units of ħ and time in units of <span class="m">I</span>/ħ.</p>
     <p>Numerics: exact diagonalization of <span class="m">Ĥ</span> in the angular-momentum basis |<span class="m">n</span>⟩ (<span class="m">p</span> = ħ<span class="m">n</span>, <span id="rBasis">—</span> states, tridiagonal QL algorithm). Time evolution is exact, through the eigen-decomposition, so any time can be reached directly. Classical periods and actions from complete elliptic integrals.</p>
   </footer>
 </div>
@@ -323,7 +343,7 @@ const wrap = a => { a = (a + PI) % TAU; if (a < 0) a += TAU; return a - PI; };
 /* ================= parameters ================= */
 const EMAX1 = 3.2;                       // top of the spectrum shown in tab 1
 const P = { tab: 1, hbar: 0.1, lev: 5, orb: true, hus1: true, curve: true,
-            x0: 0.8, w: 1, speed: 2, strobe: true };
+            x0: 0.8, w: 1, speed: 2, strobe: true, sys: "pend", N: 30, Dl: 10 };
 const hbFromU = u => 0.03 * Math.pow(1.0 / 0.03, u);           // 0.03 ... 1
 const uFromHb = h => Math.log(h / 0.03) / Math.log(1.0 / 0.03);
 const wFromU = u => 0.25 * Math.pow(16, u);
@@ -331,7 +351,7 @@ const uFromW = w => Math.log(w / 0.25) / Math.log(16);
 const spFromU = u => Math.pow(10, 3 * u - 1.5);                // relative speed 0.03 ... 30
 const PRESETS1 = { sheet: 0.1, transmon: 0.4, deep: 0.8, classical: 0.04 };
 const PRESETS2 = { sheet: { h: 0.1, x0: 0.8, w: 1 }, small: { h: 0.05, x0: 0.8, w: 1 },
-                   large: { h: 0.1, x0: 1.8, w: 1 }, squeezed: { h: 0.1, x0: 0.8, w: 2.5 } };
+                   large: { h: 0.1, x0: 1.8, w: 1 }, squeezed: { h: 0.1, x0: 0.8, w: 2.5 }, ring: { ring: true, N: 30, Dl: 10 } };
 
 /* ================= classical mechanics (m = λ = 1) ================= */
 // complete elliptic integrals K(k), E(k) of modulus k by the AGM
@@ -440,7 +460,7 @@ function densityOnGrid(D, cre, cim, lo, hi) {
 }
 // Husimi Q(q0, p0) = |<alpha|psi>|^2 with a w = 1 coherent state, evaluated in the momentum basis
 const MQ = 128;
-function husimi(D, cre, cim, pb, rows, wq, lo, hi) {
+function husimi(D, cre, cim, pTop, pBot, rows, wq, lo, hi) {
   const { Nb, n, h } = D, Q = new Float32Array(MQ * rows);
   if (lo === undefined) [lo, hi] = supportOf(n, cre, cim);
   const ww = h * wq, cut = 3.6 / Math.sqrt(ww);
@@ -448,7 +468,7 @@ function husimi(D, cre, cim, pb, rows, wq, lo, hi) {
   let qmax = 0;
   const g = new Float64Array(n);
   for (let r = 0; r < rows; r++) {
-    const p0 = pb - (r + 0.5) * 2 * pb / rows, nc = p0 / h;
+    const p0 = pTop - (r + 0.5) * (pTop - pBot) / rows, nc = p0 / h;
     const blo = Math.max(lo, Math.floor(nc - cut) + Nb), bhi = Math.min(hi, Math.ceil(nc + cut) + Nb);
     if (blo > bhi) continue;
     for (let b = blo; b <= bhi; b++) { const u = b - Nb - nc; g[b] = Math.exp(-0.5 * ww * u * u); }
@@ -464,7 +484,7 @@ function husimi(D, cre, cim, pb, rows, wq, lo, hi) {
       const v = sr * sr + si * si; Q[r * MQ + i] = v; if (v > qmax) qmax = v;
     }
   }
-  return { Q, rows, qmax, pb };
+  return { Q, rows, qmax, pTop, pBot };
 }
 
 /* ================= drawing helpers ================= */
@@ -530,7 +550,7 @@ function drawLevel(ctx, X, Y, Ev, stroke, lw, dash, sgns) {
 }
 const husCanvas = document.createElement("canvas");
 function drawHusimi(ctx, X, Y, H, col) {
-  const { Q, rows, qmax, pb } = H;
+  const { Q, rows, qmax, pTop, pBot } = H;
   husCanvas.width = MQ; husCanvas.height = rows;
   const hctx = husCanvas.getContext("2d"), img = hctx.createImageData(MQ, rows), [r, g, b] = hexToRgb(col);
   const inv = 1 / (qmax || 1);
@@ -540,7 +560,7 @@ function drawHusimi(ctx, X, Y, H, col) {
   }
   hctx.putImageData(img, 0, 0);
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(husCanvas, X(-PI), Y(pb), X(PI) - X(-PI), Y(-pb) - Y(pb));
+  ctx.drawImage(husCanvas, X(-PI), Y(pTop), X(PI) - X(-PI), Y(pBot) - Y(pTop));
 }
 function drawPotential(ctx, X, Y) {
   ctx.strokeStyle = C.pot; ctx.lineWidth = 1.8; ctx.beginPath();
@@ -579,7 +599,7 @@ function setup1() {
 }
 function selectedState() {
   const D = T1.D, j = P.lev, c = column(D, j);
-  if (T1.husFor !== j && P.hus1) { T1.hus = husimi(D, c, null, 3.0, 110, 1); T1.husFor = j; }
+  if (T1.husFor !== j && P.hus1) { T1.hus = husimi(D, c, null, 3.0, -3.0, 110, 1); T1.husFor = j; }
   return c;
 }
 function drawOrb() {
@@ -694,7 +714,7 @@ function setup2() {
   for (let j = 0; j < n; j++) {
     let ar = 0, ai = 0; for (let b = 0; b < n; b++) { const v = V[b * n + j]; ar += v * cr[b]; ai += v * ci[b]; }
     const p = ar * ar + ai * ai;
-    if (p > 1e-9) keep.push({ j, ar, ai, p, E: E[j] });
+    if (p > 1e-9) keep.push({ j, lab: j, ar, ai, p, E: E[j] });
     Ebar += p * E[j]; E2 += p * E[j] * E[j];
   }
   const K = keep.length;
@@ -713,6 +733,7 @@ function setup2() {
   const curv = Math.abs(E[n0 + 1] - 2 * E[n0] + E[n0 - 1]);
   const TrevX = 4 * PI * h / Math.max(curv, 1e-12);                  // from the exact levels near n̄
   const tEnd = 1.12 * Trev;
+  for (const k of keep) k.Erot = k.E - E[n0] - (k.j - n0) * h * Om;   // energy in the frame co-rotating at ω_cl(n̄)
   // <e^{iq}> = Σ_{jl} conj(a_j) a_l M_jl e^{i(E_j-E_l)t/ħ},  M_jl = Σ_n V[n,j] V[n-1,l]
   const NS = 14000, dt = tEnd / (NS - 1), tr = new Float64Array(NS);
   for (let x = 0; x < K; x++) for (let y = 0; y < K; y++) {
@@ -739,7 +760,7 @@ function setup2() {
   let pmax = 0; for (const k of keep) pmax = Math.max(pmax, k.p);
   const shown = keep.filter(k => k.p > 0.004 * pmax).slice(0, 48);
   T2 = { D, keep, shown, cr, ci, Ebar, dE: Math.sqrt(Math.max(E2 - Ebar * Ebar, 0)), nbar, sig, n0, Om, Tcl, Trev, Tcoll, tEnd,
-         NS, dt, tr, peakT, TrevX, t: 0, rho0max: 0, husNeeded: true };
+         NS, dt, tr, peakT, TrevX, t: 0, rho0max: 0, ring: false, yLo: TR_LO };
   // reference density scale from t = 0
   const st = stateAt(0, false); let m = 0; for (const v of densityOnGrid(D, st.re, st.im, st.lo, st.hi)) m = Math.max(m, v); T2.rho0max = m;
   $("rN").textContent = nbar.toFixed(2); $("rS").textContent = sig.toFixed(2);
@@ -747,24 +768,64 @@ function setup2() {
   $("rBasis").textContent = D.n;
   $("tScrub").max = tEnd; $("tScrub").step = tEnd / 4000;
 }
+// free ring (λ = 0), units ħ = I = 1: E_n = n²/2, equal superposition of n = N … N+Δ−1
+function setupRing() {
+  const N = P.N, Dl = P.Dl, Nb = N + Dl + 30, n = 2 * Nb + 1;
+  const E = new Float64Array(n); for (let b = 0; b < n; b++) { const nn = b - Nb; E[b] = 0.5 * nn * nn; }
+  const D = { h: 1, Nb, n, E, ring: true };
+  const nbar = N + (Dl - 1) / 2, sig = Math.sqrt((Dl * Dl - 1) / 12), a = 1 / Math.sqrt(Dl);
+  const keep = [];
+  for (let nn = N; nn < N + Dl; nn++) { const b = nn + Nb; keep.push({ j: b, lab: nn, ar: a, ai: 0, p: 1 / Dl, E: E[b], Erot: 0.5 * (nn - nbar) * (nn - nbar), bl: b, bh: b }); }
+  const Tcl = TAU / nbar, Trev = 4 * PI, Tcoll = TAU / Dl, tEnd = 1.06 * Trev;
+  // exact <e^{iq}>_t = e^{i n̄ t} sin((Δ-1)t/2) / (Δ sin(t/2))
+  const NS = 14000, dt = tEnd / (NS - 1), tr = new Float64Array(NS), trAbs = new Float64Array(NS);
+  for (let s = 0; s < NS; s++) {
+    const t = s * dt, sh = Math.sin(t / 2);
+    let A;
+    if (Math.abs(sh) < 1e-9) { const k = Math.round(t / TAU); A = ((Dl - 1) / Dl) * ((k * Dl) % 2 ? -1 : 1); }   // limit: (-1)^{kΔ}(Δ-1)/Δ
+    else A = Math.sin((Dl - 1) * t / 2) / (Dl * sh);
+    tr[s] = A * Math.cos(nbar * t); trAbs[s] = Math.abs(A);
+  }
+  let Ebar = 0; for (const k of keep) Ebar += k.p * k.E;
+  T2 = { D, keep, shown: keep, Ebar, dE: sig, nbar, sig, n0: 0, Om: nbar, Tcl, Trev, Tcoll, tEnd,
+         NS, dt, tr, trAbs, peakT: Trev / 2, TrevX: Trev, t: 0, rho0max: 0, ring: true, yLo: -1.08 };
+  const st = stateAt(0, false); let m = 0; for (const v of densityOnGrid(D, st.re, st.im, st.lo, st.hi)) m = Math.max(m, v); T2.rho0max = m;
+  $("rN").textContent = nbar.toFixed(1); $("rS").textContent = sig.toFixed(2);
+  $("rTcl").textContent = Tcl.toFixed(3); $("rTcoll").textContent = Tcoll.toFixed(2); $("rTrev").textContent = Trev.toFixed(2);
+  $("rBasis").textContent = n;
+  $("tScrub").max = tEnd; $("tScrub").step = tEnd / 4000;
+}
 // state at time t; with corot, the uniform rotation at ω_cl(n̄) is removed (exact at t = k T_cl)
 function stateAt(t, corot) {
-  const { D, keep, n0, Om } = T2, { n, V, E } = D, h = P.hbar, re = new Float64Array(n), im = new Float64Array(n);
+  const { D, keep } = T2, { n, V, h } = D, re = new Float64Array(n), im = new Float64Array(n);
   let lo = n, hi = -1;
   for (const k of keep) {
-    const Eeff = corot ? k.E - E[n0] - (k.j - n0) * h * Om : k.E;
+    const Eeff = corot ? k.Erot : k.E;
     const ph = -Eeff * t / h, c = Math.cos(ph), s = Math.sin(ph), ar = k.ar * c - k.ai * s, ai = k.ar * s + k.ai * c;
-    for (let b = k.bl; b <= k.bh; b++) { const v = V[b * n + k.j]; re[b] += v * ar; im[b] += v * ai; }
+    if (D.ring) { re[k.j] += ar; im[k.j] += ai; }
+    else for (let b = k.bl; b <= k.bh; b++) { const v = V[b * n + k.j]; re[b] += v * ar; im[b] += v * ai; }
     if (k.bl < lo) lo = k.bl; if (k.bh > hi) hi = k.bh;
   }
   return { re, im, lo, hi };
 }
 function drawPhase2(st) {
   const { ctx, w, h } = prepCanvas($("cvPhase2"));
-  const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, pb = 2.6;
+  const box = { l: 44, t: 10, w: w - 54, h: h - 52 };
+  if (T2.ring) {
+    const Rr = Math.max(2.2 * P.Dl, 10), pTop = T2.nbar + Rr, pBot = T2.nbar - Rr;
+    const { X, Y } = frame(ctx, box, [-PI, PI], [pBot, pTop], Q_TICKS, intTicks(pBot, pTop, Rr > 20 ? 10 : 5), "q", [["p", 0, 1], [" / ħ", 0, 0]]);
+    ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+    const wq = Math.min(1, Math.max(0.01, 9 / (P.Dl * P.Dl)));     // smoothing cell matched to the packet's aspect ratio
+    drawHusimi(ctx, X, Y, husimi(T2.D, st.re, st.im, pTop, pBot, 96, wq, st.lo, st.hi), C.osc);
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.3; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(X(-PI), Y(T2.nbar)); ctx.lineTo(X(PI), Y(T2.nbar)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+    return;
+  }
+  const pb = 2.6;
   const { X, Y } = frame(ctx, box, [-PI, PI], [-pb, pb], Q_TICKS, intTicks(-2, 2, 1), "q", "p");
   ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
-  const H = husimi(T2.D, st.re, st.im, pb, 96, 1, st.lo, st.hi);
+  const H = husimi(T2.D, st.re, st.im, pb, -pb, 96, 1, st.lo, st.hi);
   drawHusimi(ctx, X, Y, H, C.osc);
   for (const Ev of [-0.8, -0.4, 0, 0.4, 0.8, 1.6]) drawLevel(ctx, X, Y, Ev, rgba(C.pot, 0.3), 0.8);
   drawLevel(ctx, X, Y, 1, C.sep, 1.3);
@@ -773,6 +834,19 @@ function drawPhase2(st) {
 }
 function drawPos2(st) {
   const { ctx, w, h } = prepCanvas($("cvPos2"));
+  if (T2.ring) {
+    const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, top = 1.1 * T2.rho0max;
+    const { X, Y } = frame(ctx, box, [-PI, PI], [0, top], Q_TICKS, intTicks(0, top, top > 2 ? 1 : (top > 0.8 ? 0.5 : 0.2)), "q", "|ψ|²", true);
+    const rho = densityOnGrid(T2.D, st.re, st.im, st.lo, st.hi), col = C.osc;
+    ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 2, box.w, box.h + 2); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(X(-PI), Y(0));
+    for (let i = 0; i <= NQ; i++) ctx.lineTo(X(QGRID[i]), Y(rho[i]));
+    ctx.lineTo(X(PI), Y(0)); ctx.closePath(); ctx.fillStyle = rgba(col, 0.22); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i <= NQ; i++) { const x = X(QGRID[i]), y = Y(rho[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); ctx.restore();
+    return;
+  }
   const box = { l: 44, t: 10, w: w - 54, h: h - 52 }, E = T2.Ebar;
   const top = Math.max(1.6, E + 1.15), yr = [-1.35, top];
   const { X, Y } = frame(ctx, box, [-PI, PI], yr, Q_TICKS, intTicks(-1, top, 1), "q", "energy / λ", true);
@@ -791,7 +865,7 @@ function drawClocks(t) {
   const { ctx, w, h } = prepCanvas($("cvClock"));
   const sh = T2.shown, K = sh.length; if (!K) return;
   const box = { l: 44, t: 8, w: w - 54, h: h - 36 };
-  const E = T2.D.E, h_ = P.hbar, n0 = T2.n0, Om = T2.Om;
+  const h_ = T2.D.h;
   let pmax = 0; for (const k of sh) pmax = Math.max(pmax, k.p);
   const slot = box.w / K, rad = Math.max(4, Math.min(slot * 0.38, box.h * 0.17, 16));
   const barTop = box.t + 2 * rad + 8, barH = box.t + box.h - barTop;
@@ -803,9 +877,9 @@ function drawClocks(t) {
     const bh = barH * k.p / pmax, bw = Math.max(2, Math.min(slot * 0.55, 18));
     ctx.fillStyle = rgba(C.osc, 0.85);
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - bw / 2, box.t + box.h - bh, bw, bh, [3, 3, 0, 0]) : ctx.rect(cx - bw / 2, box.t + box.h - bh, bw, bh); ctx.fill();
-    if (i % every === 0) { ctx.fillStyle = C.muted; ctx.fillText(String(k.j), cx, box.t + box.h + 4); }
+    if (i % every === 0) { ctx.fillStyle = C.muted; ctx.fillText(String(k.lab), cx, box.t + box.h + 4); }
     // phase relative to uniform rotation at ω_cl(n̄)
-    const th = -(k.E - E[n0] - (k.j - n0) * h_ * Om) * t / h_;
+    const th = -k.Erot * t / h_;
     const cy = box.t + rad + 2;
     ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU); ctx.stroke();
     ctx.strokeStyle = C.fg; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(cx, cy);
@@ -821,7 +895,7 @@ function drawTrace(tNow) {
   const cv = $("cvTrace"), { ctx, w, h } = prepCanvas(cv);
   const box = { l: 46, t: 14, w: w - 58, h: h - 52 }, { tr, NS, dt, tEnd } = T2;
   traceBox = box;
-  const X = v => box.l + v / tEnd * box.w, Y = v => box.t + (1 - (v - TR_LO) / (1 - TR_LO)) * box.h;
+  const yLo = T2.yLo, X = v => box.l + v / tEnd * box.w, Y = v => box.t + (1 - (v - yLo) / (1 - yLo)) * box.h;
   if (!traceCache || traceCache.T2 !== T2 || traceCache.W !== cv.width || traceCache.H !== cv.height || traceCache.fg !== C.fg) {
     const off = document.createElement("canvas"); off.width = cv.width; off.height = cv.height;
     const octx = off.getContext("2d"), dpr = cv.width / w; octx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -834,6 +908,7 @@ function drawTrace(tNow) {
   const s = Math.min(NS - 1, Math.round(tNow / dt)); ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(x, Y(tr[s]), 3.5, 0, TAU); ctx.fill();
 }
 function drawTraceStatic(ctx, box) {
+  if (T2.ring) return drawTraceStaticRing(ctx, box);
   const { tr, NS, tEnd, Trev, Tcoll, TrevX } = T2;
   const step = tEnd > 3000 ? 1000 : (tEnd > 1500 ? 500 : (tEnd > 600 ? 200 : 100));
   const { X, Y } = frame(ctx, box, [0, tEnd], [TR_LO, 1], intTicks(0, tEnd, step), [[-1, "−1"], [-0.5, "−0.5"], [0, "0"], [0.5, "0.5"], [1, "1"]], [["ω", 0, 1], ["p", 1, 1], [" t", 0, 1]], "⟨sin q⟩");
@@ -865,6 +940,31 @@ function drawTraceStatic(ctx, box) {
     if (x - lastX > 44) { ctx.fillStyle = C.rot; drawRich(ctx, lab, x - 3, box.t + box.h - 5, 11, "right"); lastX = x; }
   }
 }
+function drawTraceStaticRing(ctx, box) {
+  const { tr, trAbs, NS, tEnd, Trev, Tcoll, yLo } = T2;
+  const xt = [[0, "0"], [PI, "π"], [2 * PI, "2π"], [3 * PI, "3π"], [4 * PI, "4π"]];
+  const { X, Y } = frame(ctx, box, [0, tEnd], [yLo, 1], xt, [[-1, "−1"], [-0.5, "−0.5"], [0, "0"], [0.5, "0.5"], [1, "1"]], [["ħt", 0, 1], [" / ", 0, 0], ["I", 0, 1]], "⟨cos q⟩,  |⟨exp iq⟩|");
+  const cols = Math.max(1, Math.floor(box.w));
+  ctx.strokeStyle = C.osc; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 0; c < cols; c++) {
+    const s0 = Math.floor(c / cols * NS), s1 = Math.max(s0 + 1, Math.floor((c + 1) / cols * NS));
+    let lo = Infinity, hi = -Infinity; for (let s = s0; s < s1 && s < NS; s++) { if (tr[s] < lo) lo = tr[s]; if (tr[s] > hi) hi = tr[s]; }
+    const x = box.l + c + 0.5; ctx.moveTo(x, Y(hi) - 0.5); ctx.lineTo(x, Y(lo) + 0.5);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = C.fg; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let c = 0; c <= cols; c++) { const s = Math.min(NS - 1, Math.round(c / cols * (NS - 1))); const x = box.l + c, y = Y(trAbs[s]); c ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  ctx.font = FONT(11); ctx.textBaseline = "top"; ctx.textAlign = "center";
+  const T = [["T", 0, 1]], marks = [[Tcoll, [...T, ["coll", 1, 0]]], [Trev / 4, [...T, ["rev", 1, 0], ["/4", 0, 0]]],
+    [Trev / 2, [...T, ["rev", 1, 0], ["/2", 0, 0]]], [Trev, [...T, ["rev", 1, 0]]]];
+  let lastX = -1e9;
+  for (const [tm, lab] of marks) {
+    const x = X(tm); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, box.t); ctx.lineTo(x, box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
+    if (x - lastX > 44) { ctx.fillStyle = C.muted; drawRich(ctx, lab, x, 0, 11, "center"); lastX = x; }
+  }
+}
 function drawAll2() {
   if (!T2) return;
   const t = T2.t, st = stateAt(t, P.strobe);
@@ -879,22 +979,29 @@ function labels() {
   $("x0v").textContent = P.x0.toFixed(2);
   $("wwv").textContent = P.w.toFixed(2);
   $("spv").textContent = P.speed.toFixed(2) + "×";
+  $("rN0v").textContent = P.N; $("rDlv").textContent = P.Dl;
   const sq = Math.sqrt(P.hbar * P.w / 2), sp = Math.sqrt(P.hbar / (2 * P.w));
   $("wHint").innerHTML = `σ<sub>q</sub>(0) = ${sq.toFixed(3)}, σ<sub>p</sub>(0) = ${sp.toFixed(3)}${Math.abs(P.w - 1) < 0.02 ? " · coherent state of the harmonic approximation" : ""}`;
 }
 function syncInputs() {
   $("hb").value = uFromHb(P.hbar); $("x0").value = P.x0; $("ww").value = uFromW(P.w);
   $("sp").value = (Math.log10(P.speed) + 1.5) / 3; $("lev").value = P.lev; $("lStrobe").checked = P.strobe;
+  $("rN0").value = P.N; $("rDl").value = P.Dl;
   labels();
 }
 function markPresets() {
   for (const b of document.querySelectorAll("[data-preset1]")) b.setAttribute("aria-pressed", String(Math.abs(PRESETS1[b.dataset.preset1] - P.hbar) < 1e-9));
-  for (const b of document.querySelectorAll("[data-preset2]")) { const pr = PRESETS2[b.dataset.preset2]; b.setAttribute("aria-pressed", String(Math.abs(pr.h - P.hbar) < 1e-9 && Math.abs(pr.x0 - P.x0) < 1e-9 && Math.abs(pr.w - P.w) < 1e-9)); }
+  for (const b of document.querySelectorAll("[data-preset2]")) {
+    const pr = PRESETS2[b.dataset.preset2];
+    const on = pr.ring ? (P.sys === "ring" && pr.N === P.N && pr.Dl === P.Dl)
+                       : (P.sys === "pend" && Math.abs(pr.h - P.hbar) < 1e-9 && Math.abs(pr.x0 - P.x0) < 1e-9 && Math.abs(pr.w - P.w) < 1e-9);
+    b.setAttribute("aria-pressed", String(on));
+  }
 }
 let dirty1 = true, dirty2 = true;
 function refresh() {
   if (P.tab === 1) { if (dirty1) { setup1(); dirty1 = false; } drawAll1(); }
-  else { if (dirty2) { setup2(); dirty2 = false; } drawAll2(); }
+  else { if (dirty2) { P.sys === "ring" ? setupRing() : setup2(); dirty2 = false; } drawAll2(); }
   markPresets();
 }
 function setTab(k) {
@@ -903,9 +1010,26 @@ function setTab(k) {
   for (const el of document.querySelectorAll("[data-tab]")) el.hidden = +el.dataset.tab !== k;
   $("plots1").hidden = k !== 1; $("plots2").hidden = k !== 2;
   $("tb1").hidden = k !== 1; $("tb2").hidden = k !== 2;
-  $("notes1").hidden = k !== 1; $("notes2").hidden = k !== 2;
+  $("notes1").hidden = k !== 1;
   if (k === 1) setPlay(false);
+  applyMode();
   refresh();
+}
+// show the controls, readouts and labels that belong to the selected system in tab 2
+function applyMode() {
+  const t2 = P.tab === 2, ring = P.sys === "ring";
+  $("gHbar").hidden = t2 && ring;
+  $("gCoh").hidden = !t2 || ring; $("gRing").hidden = !t2 || !ring;
+  $("notes2").hidden = !t2 || ring; $("notes3").hidden = !t2 || !ring;
+  $("jHintPend").hidden = ring; $("jHintRing").hidden = !ring; $("jPeak").hidden = ring;
+  $("rTrevPend").hidden = ring; $("rTrevRing").hidden = !ring;
+  $("posKey").innerHTML = ring ? "|ψ(<span class=\"m\">q</span>,<span class=\"m\">t</span>)|²"
+                               : "|ψ(<span class=\"m\">q</span>,<span class=\"m\">t</span>)|² on its mean energy";
+  $("trTitle").innerHTML = ring ? "⟨<span class=\"m\">e<sup>iq̂</sup></span>⟩ over the full run"
+                                : "⟨sin <span class=\"m\">q̂</span>⟩ over the full run";
+  $("trKey").innerHTML = ring
+    ? "<span><span class=\"swatch\" style=\"border-top-color:var(--osc)\"></span> ⟨cos <span class=\"m\">q̂</span>⟩</span><span><span class=\"swatch\"></span> |⟨<span class=\"m\">e<sup>iq̂</sup></span>⟩|</span><span><span class=\"swatch dash\"></span> exact times</span><span>click to jump</span>"
+    : "<span><span class=\"swatch dash\"></span> quartic estimates</span><span><span class=\"swatch\" style=\"border-top-color:var(--rot)\"></span> from the exact levels at <span class=\"m\">n̄</span></span><span>click to jump</span>";
 }
 $("tab1").addEventListener("click", () => setTab(1));
 $("tab2").addEventListener("click", () => setTab(2));
@@ -916,7 +1040,10 @@ for (const b of document.querySelectorAll("[data-preset1]")) b.addEventListener(
   P.hbar = PRESETS1[b.dataset.preset1]; dirty1 = dirty2 = true; syncInputs(); refresh();
 });
 for (const b of document.querySelectorAll("[data-preset2]")) b.addEventListener("click", () => {
-  const pr = PRESETS2[b.dataset.preset2]; P.hbar = pr.h; P.x0 = pr.x0; P.w = pr.w; dirty1 = dirty2 = true; syncInputs(); refresh();
+  const pr = PRESETS2[b.dataset.preset2];
+  if (pr.ring) { P.sys = "ring"; P.N = pr.N; P.Dl = pr.Dl; dirty2 = true; }
+  else { P.sys = "pend"; P.hbar = pr.h; P.x0 = pr.x0; P.w = pr.w; dirty1 = dirty2 = true; }
+  setPlay(false); syncInputs(); applyMode(); refresh();
 });
 $("hb").addEventListener("input", () => { P.hbar = +hbFromU(+$("hb").value).toPrecision(3); dirty1 = dirty2 = true; labels(); refresh(); });
 $("lev").addEventListener("input", () => { P.lev = +$("lev").value; refresh(); });
@@ -926,6 +1053,8 @@ $("lCurve").addEventListener("change", e => { P.curve = e.target.checked; refres
 $("x0").addEventListener("input", () => { P.x0 = +$("x0").value; dirty2 = true; labels(); refresh(); });
 $("ww").addEventListener("input", () => { P.w = +wFromU(+$("ww").value).toPrecision(3); dirty2 = true; labels(); refresh(); });
 $("sp").addEventListener("input", () => { P.speed = spFromU(+$("sp").value); labels(); });
+$("rN0").addEventListener("input", () => { P.N = +$("rN0").value; dirty2 = true; labels(); refresh(); });
+$("rDl").addEventListener("input", () => { P.Dl = +$("rDl").value; dirty2 = true; labels(); refresh(); });
 $("lStrobe").addEventListener("change", e => { P.strobe = e.target.checked; refresh(); });
 $("tScrub").addEventListener("input", () => { setPlay(false); T2.t = +$("tScrub").value; drawAll2(); });
 for (const b of document.querySelectorAll("[data-jump]")) b.addEventListener("click", () => {
@@ -975,7 +1104,7 @@ readColors(); syncInputs(); setTab(1);
 requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
 
 // hook for testing
-window.pendulum = { P, diag, bsLevels, Sosc, Srot, Tosc, Trot, get T1() { return T1; }, get T2() { return T2; }, setTab, refresh, stateAt };
+window.pendulum = { P, applyMode, diag, bsLevels, Sosc, Srot, Tosc, Trot, get T1() { return T1; }, get T2() { return T2; }, setTab, refresh, stateAt };
 })();
 </script>
 </body>
