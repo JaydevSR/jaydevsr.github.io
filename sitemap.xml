@@ -3,31 +3,37 @@
 
 <url>
     <loc>https://jaydevsr.github.io/work/index.html</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
     <loc>https://jaydevsr.github.io/index.html</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
     <loc>https://jaydevsr.github.io/posts/index.html</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+</url>
+<url>
+    <loc>https://jaydevsr.github.io/teaching/kul/scattering/</loc>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
     <loc>https://jaydevsr.github.io/teaching/kul/josephson_spectrum_revival/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>
 <url>
     <loc>https://jaydevsr.github.io/teaching/kul/josephson_wavepackets/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
 </url>

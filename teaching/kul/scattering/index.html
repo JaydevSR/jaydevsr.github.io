@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resonant Tunnelling and Born Scattering</title>
+<meta name="description" content="Interactive companion to Tutorial 3: wave packets through a double barrier (resonant tunnelling, Breit–Wigner widths, quasi-bound states) and three-dimensional scattering by a Yukawa potential, exact partial waves against the first Born approximation.">
+<style>
+/* Same lab-instrument layout as the Josephson pages of Tutorials 2b/2c: controls on the left,
+   live plots on the right, stacked on phones. Two tabs share the controls column. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #1a1d23;
+  --muted: #5b6270;
+  --rule: #d8dce4;
+  --pot: #4b505b;
+  --accent: #2b4c7e;
+  --osc: #2266c4;
+  --sep: #d4471c;
+  --rot: #129067;
+  --focus: #2b4c7e;
+  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-data: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+    --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+    --focus: #8fb0e6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+  --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+  --focus: #8fb0e6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lead { margin: 2px 0 0; max-width: 72ch; color: var(--muted); }
+.m { font-family: var(--font-display); font-style: italic; }
+.mu { font-family: var(--font-display); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); overflow-x: auto; }
+.tabs button {
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--muted); background: none;
+  border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px; margin-bottom: -1px;
+  cursor: pointer; white-space: nowrap;
+}
+.tabs button:hover { color: var(--fg); }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+.app { display: grid; grid-template-columns: 17.5rem minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .viz { order: -1; } }
+
+.controls { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 16px; display: grid; gap: 16px; }
+.group { display: grid; gap: 10px; }
+.group[hidden] { display: none; }
+.group h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets button { display: grid; gap: 1px; text-align: left; }
+.presets button small { color: var(--muted); font-size: 11.5px; font-family: var(--font-data); }
+.presets .span2 { grid-column: 1 / -1; }
+.presets button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+button {
+  font: inherit; font-size: 14px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 7px; padding: 7px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { display: grid; gap: 2px; }
+.slider label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.slider output { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--fg); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--fg); vertical-align: middle; }
+.swatch.dash { border-top-style: dashed; }
+.box { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: middle; }
+
+.viz { display: grid; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.toolbar[hidden] { display: none; }
+.toolbar .btns { display: flex; gap: 8px; }
+.toolbar .primary { background: var(--fg); color: var(--bg); border-color: var(--fg); min-width: 5.5em; }
+.readouts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; align-items: baseline; }
+.readouts .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 1px 9px 2px; border-radius: 999px; border: 1px solid currentColor; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.scrub { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; width: 100%; }
+
+.plots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.plots[hidden] { display: none; }
+@media (max-width: 680px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px 8px; display: grid; gap: 4px; min-width: 0; margin: 0; }
+.panel.wide { grid-column: 1 / -1; }
+.panel header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.panel h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.panel .key { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; }
+canvas { display: block; width: 100%; max-width: 100%; }
+.r43 { aspect-ratio: 4 / 3; }
+.r11 { aspect-ratio: 1 / 1; }
+.r_wide { aspect-ratio: 16 / 4.6; }
+.r_close { aspect-ratio: 16 / 5.4; }
+@media (max-width: 680px) { .r_wide, .r_close { aspect-ratio: 16 / 8; } }
+#cvSpec, #cvSig { cursor: crosshair; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 22px; font-size: 14px; color: var(--muted); }
+.notes[hidden] { display: none; }
+.notes p { margin: 0; max-width: 62ch; }
+.notes strong { color: var(--fg); font-weight: 600; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+footer p { margin: 0 0 4px; max-width: 100ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Advanced Quantum Mechanics · Tutorial 3</p>
+    <h1>Resonant tunnelling and Born scattering</h1>
+    <p class="lead">Two scattering problems solved exactly. The first tab sends wave packets through a double barrier, built as superpositions of the stationary scattering states of the lecture. The second tab scatters a plane wave off a Yukawa potential in three dimensions and compares the exact partial-wave result with the first Born approximation.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="plots1">Double barrier</button>
+    <button type="button" role="tab" id="tab2" aria-selected="false" aria-controls="plots2" tabindex="-1">Born approximation</button>
+  </div>
+
+  <div class="app">
+    <aside class="controls" aria-label="Controls">
+      <!-- ============ tab 1 ============ -->
+      <section class="group" data-tab="1">
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the double barrier">
+          <button type="button" data-preset1="res" aria-pressed="true">On resonance<small>long packet · n = 1</small></button>
+          <button type="button" data-preset1="off" aria-pressed="false">Off resonance<small>long packet</small></button>
+          <button type="button" data-preset1="single" aria-pressed="false">One barrier only<small>same energy</small></button>
+          <button type="button" data-preset1="short" aria-pressed="false">Short packet<small>σ = 0.6 b · n = 2</small></button>
+          <button type="button" class="span2" data-preset1="sheet" aria-pressed="false">Tutorial sheet, Fig. 2<small>V₀ = 150 ħ²/mb² · a = 0.15 b</small></button>
+        </div>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Barriers</h2>
+        <div class="slider">
+          <label for="V0"><span>Height <span class="m">V</span><sub>0</sub></span><output id="V0v" for="V0"></output></label>
+          <input type="range" id="V0" min="20" max="200" step="1" value="60">
+        </div>
+        <div class="slider">
+          <label for="aa"><span>Width <span class="m">a</span></span><output id="aav" for="aa"></output></label>
+          <input type="range" id="aa" min="0.04" max="0.30" step="0.005" value="0.15">
+          <p class="hint">Well width <span class="m">b</span> = 1 sets the length unit.</p>
+        </div>
+        <label class="check"><input type="checkbox" id="single"><span>One barrier only (width <span class="m">a</span>, centred)</span></label>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Incident packet</h2>
+        <div class="slider">
+          <label for="E0"><span>Mean energy <span class="m">E</span><sub>0</sub>/<span class="m">V</span><sub>0</sub></span><output id="E0v" for="E0"></output></label>
+          <input type="range" id="E0" min="0" max="1" step="0.0005" value="0.5">
+          <p class="hint">or click in the transmission plot</p>
+        </div>
+        <button type="button" id="snap">Snap to nearest resonance</button>
+        <div class="slider">
+          <label for="sg"><span>Spatial width σ</span><output id="sgv" for="sg"></output></label>
+          <input type="range" id="sg" min="0" max="1" step="0.001" value="0.8">
+          <p class="hint" id="sgHint"></p>
+        </div>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Playback</h2>
+        <div class="slider">
+          <label for="sp1">Speed<output id="sp1v" for="sp1"></output></label>
+          <input type="range" id="sp1" min="0" max="1" step="0.001" value="0.5">
+        </div>
+      </section>
+
+      <!-- ============ tab 2 ============ -->
+      <section class="group" data-tab="2" hidden>
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the Born view">
+          <button type="button" data-preset2="weakLow" aria-pressed="true">Weak, slow<small>g 0.1 · k 0.3</small></button>
+          <button type="button" data-preset2="weakHigh" aria-pressed="false">Weak, fast<small>g 0.1 · k 3</small></button>
+          <button type="button" data-preset2="rep" aria-pressed="false">Strong repulsive<small>g +2 · k 0.6</small></button>
+          <button type="button" data-preset2="att" aria-pressed="false">Strong attractive<small>g −2 · k 0.6</small></button>
+          <button type="button" class="span2" data-preset2="coul" aria-pressed="false">Towards Coulomb<small>g 0.1 · k 4 · compare Rutherford</small></button>
+        </div>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Yukawa potential</h2>
+        <p class="hint"><span class="m">V</span>(<span class="m">r</span>) = <span class="m">V</span><sub>0</sub> <span class="m">e</span><sup>−<span class="m">μr</span></sup>/(<span class="m">μr</span>)</p>
+        <div class="slider">
+          <label for="gg"><span>Strength <span class="m">g</span> = <span class="m">mV</span><sub>0</sub>/(ħ<sup>2</sup><span class="m">μ</span><sup>2</sup>)</span><output id="ggv" for="gg"></output></label>
+          <input type="range" id="gg" min="-3" max="3" step="0.01" value="0.1">
+          <p class="hint">positive: repulsive · negative: attractive. The Remark of the sheet asks for |<span class="m">g</span>| ≪ 1.</p>
+        </div>
+        <div class="slider">
+          <label for="kk"><span>Momentum <span class="m">k</span>/(ħ<span class="m">μ</span>)</span><output id="kkv" for="kk"></output></label>
+          <input type="range" id="kk" min="0" max="1" step="0.001" value="0.4">
+          <p class="hint">range 1/<span class="m">μ</span> against the reduced wavelength ħ/<span class="m">k</span>; or click in the σ(<span class="m">k</span>) plot</p>
+        </div>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Show</h2>
+        <label class="check"><input type="radio" name="pic" id="picSc" checked><span>Scattered wave <span class="m">r</span>·Re ψ<sub>sc</sub></span></label>
+        <label class="check"><input type="radio" name="pic" id="picTot"><span>Total wave Re ψ</span></label>
+        <label class="check"><input type="checkbox" id="ruth" checked><span>Rutherford, same <span class="m">V</span><sub>0</sub>/<span class="m">μ</span></span></label>
+      </section>
+    </aside>
+
+    <main class="viz">
+      <!-- tab 1 toolbar -->
+      <div class="toolbar" id="tb1">
+        <div class="btns">
+          <button type="button" class="primary" id="play1">Play</button>
+          <button type="button" id="restart1">Restart</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <span><span class="m">t</span> = <span class="num" id="rT1">0</span></span>
+          <span title="Transmission probability at the mean energy">τ(<span class="m">E</span><sub>0</sub>) = <span class="num" id="rTau">—</span></span>
+          <span title="Single-barrier transmission at the mean energy">τ<sub>1</sub>(<span class="m">E</span><sub>0</sub>) = <span class="num" id="rTau1">—</span></span>
+          <span id="rResWrap" title="Nearest resonance, its full width at half maximum, and the lifetime ħ/Γ"><span class="m">E<sub>n</sub></span> = <span class="num" id="rEn">—</span>, Γ = <span class="num" id="rG">—</span>, ħ/Γ = <span class="num" id="rLife">—</span></span>
+        </div>
+        <div class="scrub">
+          <label for="tScrub1">time</label>
+          <input type="range" id="tScrub1" min="0" max="1" step="0.0001" value="0" aria-label="Time">
+        </div>
+      </div>
+      <!-- tab 2 toolbar -->
+      <div class="toolbar" id="tb2" hidden>
+        <div class="btns">
+          <button type="button" class="primary" id="play2">Pause</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <span title="Total cross section from the exact phase shifts">σ<sub>exact</sub> = <span class="num" id="rSe">—</span></span>
+          <span title="Total cross section in first Born approximation">σ<sub>Born</sub> = <span class="num" id="rSb">—</span></span>
+          <span title="Number of partial waves with a phase shift above 0.01 rad">partial waves: <span class="num" id="rL">—</span></span>
+          <span class="chip" id="rValid">—</span>
+        </div>
+      </div>
+
+      <!-- tab 1 plots -->
+      <div class="plots" id="plots1" role="tabpanel" aria-labelledby="tab1">
+        <figure class="panel">
+          <header><h3>Transmission spectrum</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> τ(<span class="m">E</span>)</span><span><span class="swatch dash"></span> one barrier τ<sub>1</sub></span><span><span class="box" style="background:var(--sep);opacity:.35"></span> packet</span></div></header>
+          <canvas id="cvSpec" class="r43" tabindex="0" role="img" aria-label="Transmission probability against energy on a logarithmic scale, with the energy distribution of the packet. Click to choose the mean energy."></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Where is the particle?</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--muted)"></span> left</span><span><span class="swatch" style="border-top-color:var(--sep)"></span> between the barriers</span><span><span class="swatch" style="border-top-color:var(--osc)"></span> right</span></div></header>
+          <canvas id="cvProb" class="r43" role="img" aria-label="Probability to find the particle left of, between, and right of the barriers against time"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Wave packet</h3><div class="key"><span>|ψ(<span class="m">x</span>,<span class="m">t</span>)|² · barriers at the centre (thin marks)</span></div></header>
+          <canvas id="cvFull" class="r_wide" role="img" aria-label="Probability density of the wave packet over the whole domain"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Close-up of the barriers</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> packet |ψ(<span class="m">x</span>,<span class="m">t</span>)|²</span><span><span class="swatch dash" style="border-top-color:var(--sep)"></span> stationary state at <span class="m">E</span><sub>0</sub>, |ψ<sub><span class="m">E</span></sub>(<span class="m">x</span>)|²</span></div></header>
+          <canvas id="cvClose" class="r_close" role="img" aria-label="Probability density near the barriers, for the packet and for the stationary scattering state at the mean energy"></canvas>
+        </figure>
+      </div>
+
+      <!-- tab 2 plots -->
+      <div class="plots" id="plots2" role="tabpanel" aria-labelledby="tab2" hidden>
+        <figure class="panel">
+          <header><h3>Differential cross section</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact</span><span><span class="swatch dash"></span> Born</span><span id="keyRuth"><span class="swatch" style="border-top-color:var(--sep)"></span> Rutherford</span></div></header>
+          <canvas id="cvDsig" class="r43" role="img" aria-label="Differential cross section against scattering angle, exact and first Born approximation"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Wave in the <span class="m">x</span>–<span class="m">z</span> plane</h3><div class="key"><span>beam along +<span class="m">z</span> · dashed circle: <span class="m">r</span> = 1/<span class="m">μ</span> · red/blue: sign</span></div></header>
+          <canvas id="cvPic" class="r11" role="img" aria-label="Real part of the exact scattering wave function in a plane containing the beam axis"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Total cross section against momentum</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact</span><span><span class="swatch dash"></span> Born</span><span>click to choose <span class="m">k</span></span></div></header>
+          <canvas id="cvSig" class="r_wide" tabindex="0" role="img" aria-label="Total cross section against momentum, exact and Born, on logarithmic axes. Click to choose the momentum."></canvas>
+        </figure>
+      </div>
+    </main>
+  </div>
+
+  <section class="notes" id="notes1" aria-label="How to read the double-barrier view">
+    <p><strong>Packet.</strong> The packet is the superposition ∫d<span class="m">k</span> <span class="m">c</span>(<span class="m">k</span>) ψ<sub><span class="m">k</span></sub>(<span class="m">x</span>) <span class="m">e</span><sup>−<span class="m">iEt</span>/ħ</sup> of exact scattering states, Eq. (3.7) of the notes. Its energy distribution |<span class="m">c</span>|² is the shaded curve in the spectrum: a long packet is sharp in energy, a short one is broad.</p>
+    <p><strong>Resonance.</strong> On a resonance the wave between the barriers builds up to |ψ|² ≈ 4/τ<sub>1</sub>, and the reflected wave on the left vanishes: no standing-wave ripple in the dashed curve. The particle then stays between the barriers for a time of order ħ/Γ before leaking out on both sides.</p>
+    <p><strong>Short packet.</strong> A packet shorter than the well bounces back and forth, and a small pulse leaks out at every hit. Its energy spread covers several resonances, so the transmitted fraction is close to the energy average of τ, not to τ(<span class="m">E</span><sub>0</sub>).</p>
+  </section>
+  <section class="notes" id="notes2" aria-label="How to read the Born view" hidden>
+    <p><strong>Born.</strong> In first order, <span class="m">f</span> depends only on the momentum transfer ħ<span class="m">q</span> = 2<span class="m">k</span> sin(θ/2), and is the same for <span class="m">g</span> and −<span class="m">g</span>. The exact result is not: compare the strong repulsive and attractive presets.</p>
+    <p><strong>Forward peak.</strong> For <span class="m">k</span> ≪ ħ<span class="m">μ</span> only the s-wave is scattered and the cross section is flat in θ. For <span class="m">k</span> ≫ ħ<span class="m">μ</span> it is confined to θ ≲ ħ<span class="m">μ</span>/<span class="m">k</span>, and at larger angles it follows the Rutherford curve.</p>
+    <p><strong>Validity.</strong> Born works when |<span class="m">g</span>| ≪ 1 at all energies, and also at high energy when |<span class="m">g</span>|ħ<span class="m">μ</span>/<span class="m">k</span> ≪ 1. For an attractive potential with <span class="m">g</span> &lt; −0.84 there is a bound state, and the low-energy cross section is far from Born.</p>
+  </section>
+
+  <footer>
+    <p>Units ħ = <span class="m">m</span> = 1. Double barrier: lengths in units of the well width <span class="m">b</span>, energies in units of ħ²/(<span class="m">mb</span>²), time in units of <span class="m">mb</span>²/ħ. Yukawa: lengths in units of 1/<span class="m">μ</span>, momenta in units of ħ<span class="m">μ</span>, cross sections in units of 1/<span class="m">μ</span>².</p>
+    <p>Numerics: double barrier by transfer matrices; the packet is a sum over <span id="rNk">—</span> exact scattering states, so any time can be reached directly, and the probabilities on each side come from the time-integrated current at the outer edges. Yukawa: Numerov integration of the radial equation for each partial wave, phase shifts by matching to Riccati–Bessel functions at <span class="m">r</span> = 30/<span class="m">μ</span>; the picture is the exact partial-wave sum.</p>
+  </footer>
+</div>
+<script>
+(() => {
+"use strict";
+const TAU = 2 * Math.PI, PI = Math.PI;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ======================= shared drawing helpers ======================= */
+let C = {}, BODYFONT = "sans-serif";
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = { fg: g("--fg"), muted: g("--muted"), rule: g("--rule"), pot: g("--pot"), surface: g("--surface"),
+        osc: g("--osc"), sep: g("--sep"), rot: g("--rot"), accent: g("--accent") };
+  BODYFONT = getComputedStyle(document.body).fontFamily;
+}
+function hexToRgb(h) { const m = h.replace("#", ""); const v = parseInt(m.length === 3 ? m.split("").map(c => c + c).join("") : m, 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+function rgba(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+const FONT = s => `${s}px ${BODYFONT}`;
+const MFONT = s => `italic ${s}px "Iowan Old Style", Charter, Cambria, Georgia, serif`;
+function prepCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, r.width, r.height);
+  return { ctx, w: r.width, h: r.height };
+}
+function richSegs(lab, italic) { return typeof lab === "string" ? [[lab, 0, italic ? 1 : 0]] : lab; }
+function drawRich(ctx, segs, x, y, size, align) {
+  const fontOf = sg => (sg[2] ? MFONT : FONT)(sg[1] ? Math.round(size * 0.74) : size);
+  let wsum = 0; for (const sg of segs) { ctx.font = fontOf(sg); wsum += ctx.measureText(sg[0]).width; }
+  let cx = align === "center" ? x - wsum / 2 : (align === "right" ? x - wsum : x);
+  const ta = ctx.textAlign; ctx.textAlign = "left";
+  for (const sg of segs) { ctx.font = fontOf(sg); ctx.fillText(sg[0], cx, y + (sg[1] ? size * 0.28 : 0)); cx += ctx.measureText(sg[0]).width; }
+  ctx.textAlign = ta;
+}
+// axes; xlog / ylog: ranges given as log10 values
+function frame(ctx, box, xr, yr, xt, yt, xlab, ylab, ylabUpright) {
+  const X = v => box.l + (v - xr[0]) / (xr[1] - xr[0]) * box.w;
+  const Y = v => box.t + (1 - (v - yr[0]) / (yr[1] - yr[0])) * box.h;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, box.t + box.h); ctx.lineTo(box.l + box.w, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const [v, s] of xt) { const x = X(v); ctx.beginPath(); ctx.moveTo(x, box.t + box.h); ctx.lineTo(x, box.t + box.h + 4); ctx.stroke(); ctx.fillText(s, x, box.t + box.h + 6); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const [v, s] of yt) { const y = Y(v); ctx.beginPath(); ctx.moveTo(box.l - 4, y); ctx.lineTo(box.l, y); ctx.stroke(); ctx.fillText(s, box.l - 6, y); }
+  ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  if (xlab) drawRich(ctx, richSegs(xlab, true), box.l + box.w / 2, box.t + box.h + 36, 13, "center");
+  if (ylab) {
+    ctx.save(); ctx.translate(13, box.t + box.h / 2); ctx.rotate(-PI / 2); ctx.textBaseline = "middle";
+    drawRich(ctx, richSegs(ylab, !ylabUpright), 0, 0, ylabUpright ? 12 : 13, "center"); ctx.restore();
+  }
+  return { X, Y };
+}
+function numLabel(v) { const s = Math.abs(v) < 1e-9 ? "0" : String(+v.toFixed(2)); return v < 0 ? "−" + s.slice(1) : s; }
+function ticks(lo, hi, step) { const t = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) t.push([v, numLabel(v)]); return t; }
+function niceStep(span, n) { const raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+const SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+const pow10 = e => e === 0 ? "1" : (e === 1 ? "10" : "10" + String(e).split("").map(c => SUP[c]).join(""));
+function logTicks(lo, hi, maxN) {
+  const a = Math.ceil(lo - 1e-9), b = Math.floor(hi + 1e-9), n = b - a + 1, st = Math.max(1, Math.ceil(n / maxN)), t = [];
+  for (let e = a; e <= b; e++) if ((e - a) % st === 0) t.push([e, pow10(e)]);
+  return t;
+}
+function fmt(v, d) { if (!isFinite(v)) return "—"; return (v < 0 ? "−" : "") + Math.abs(v).toFixed(d); }
+function fmtSig(v, s) {
+  if (!isFinite(v)) return "—";
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 1e-3 || a >= 1e5)) { const e = Math.floor(Math.log10(a)), m = v / Math.pow(10, e); return `${m.toFixed(s - 1)}×10${String(e).split("").map(c => SUP[c]).join("")}`.replace("-", "−"); }
+  return (v < 0 ? "−" : "") + a.toPrecision(s);
+}
+
+/* ======================= TAB 1: double barrier ======================= */
+// units ħ = m = 1, well width b = 1
+const P1 = { V0: 60, a: 0.15, single: false, E0: 3.44, sigma: 30, speed: 1 };
+const PRE1 = {
+  res:    { V0: 60, a: 0.15, single: false, snap: 1, sigma: 30 },
+  off:    { V0: 60, a: 0.15, single: false, E0: 8.0, sigma: 30 },
+  single: { V0: 60, a: 0.15, single: true, snapDouble: 1, sigma: 30 },
+  short:  { V0: 60, a: 0.15, single: false, snap: 2, sigma: 0.6 },
+  sheet:  { V0: 150, a: 0.15, single: false, snap: 1, sigma: 30 },
+};
+const sgFromU = u => 0.4 * Math.pow(100, u);      // 0.4 … 40
+const uFromSg = s => Math.log(s / 0.4) / Math.log(100);
+
+function geometry(single) {
+  const a = P1.a, V0 = P1.V0;
+  if (single) return { xs: [-a / 2, a / 2], Vs: [0, V0, 0] };
+  return { xs: [-0.5 - a, -0.5, 0.5, 0.5 + a], Vs: [0, V0, 0, V0, 0] };
+}
+// stationary scattering state with incoming e^{ikx} from the left, normalized to A_0 = 1
+function solveE(E, geo) {
+  const { xs, Vs } = geo, n = Vs.length;
+  const Kr = new Float64Array(n), Ki = new Float64Array(n), Ar = new Float64Array(n), Ai = new Float64Array(n), Br = new Float64Array(n), Bi = new Float64Array(n);
+  for (let j = 0; j < n; j++) { let d = 2 * (E - Vs[j]); if (Math.abs(d) < 1e-10) d = 1e-10; if (d > 0) Kr[j] = Math.sqrt(d); else Ki[j] = Math.sqrt(-d); }
+  Ar[n - 1] = 1;
+  for (let j = n - 2; j >= 0; j--) {
+    const x = xs[j];
+    // rho = K_{j+1}/K_j
+    const den = Kr[j] * Kr[j] + Ki[j] * Ki[j];
+    const rr = (Kr[j + 1] * Kr[j] + Ki[j + 1] * Ki[j]) / den, ri = (Ki[j + 1] * Kr[j] - Kr[j + 1] * Ki[j]) / den;
+    // S = A' e^{iK' x}, D = B' e^{-iK' x}
+    let m = Math.exp(-Ki[j + 1] * x), c = Math.cos(Kr[j + 1] * x), s = Math.sin(Kr[j + 1] * x);
+    const epr = m * c, epi = m * s;
+    m = Math.exp(Ki[j + 1] * x);
+    const emr = m * c, emi = -m * s;
+    const Sr = Ar[j + 1] * epr - Ai[j + 1] * epi, Si = Ar[j + 1] * epi + Ai[j + 1] * epr;
+    const Dr = Br[j + 1] * emr - Bi[j + 1] * emi, Di = Br[j + 1] * emi + Bi[j + 1] * emr;
+    const pr = 1 + rr, pi = ri, qr = 1 - rr, qi = -ri;                  // (1+rho), (1-rho)
+    const Ur = pr * Sr - pi * Si + qr * Dr - qi * Di, Ui = pr * Si + pi * Sr + qr * Di + qi * Dr;   // (1+ρ)S + (1−ρ)D
+    const Wr = qr * Sr - qi * Si + pr * Dr - pi * Di, Wi = qr * Si + qi * Sr + pr * Di + pi * Dr;   // (1−ρ)S + (1+ρ)D
+    m = Math.exp(Ki[j] * x); c = Math.cos(Kr[j] * x); s = Math.sin(Kr[j] * x);
+    const fmr = m * c, fmi = -m * s;                                     // e^{-iK_j x}
+    m = Math.exp(-Ki[j] * x);
+    const fpr = m * c, fpi = m * s;                                      // e^{+iK_j x}
+    Ar[j] = 0.5 * (fmr * Ur - fmi * Ui); Ai[j] = 0.5 * (fmr * Ui + fmi * Ur);
+    Br[j] = 0.5 * (fpr * Wr - fpi * Wi); Bi[j] = 0.5 * (fpr * Wi + fpi * Wr);
+  }
+  const d0 = Ar[0] * Ar[0] + Ai[0] * Ai[0], ir = Ar[0] / d0, ii = -Ai[0] / d0;   // 1/A_0
+  for (let j = 0; j < n; j++) {
+    let x = Ar[j] * ir - Ai[j] * ii, y = Ar[j] * ii + Ai[j] * ir; Ar[j] = x; Ai[j] = y;
+    x = Br[j] * ir - Bi[j] * ii; y = Br[j] * ii + Bi[j] * ir; Br[j] = x; Bi[j] = y;
+  }
+  return { xs, Kr, Ki, Ar, Ai, Br, Bi, tr: Ar[n - 1], ti: Ai[n - 1], rr: Br[0], ri: Bi[0] };
+}
+const tauOf = s => s.tr * s.tr + s.ti * s.ti;
+// psi and psi' at x
+function psiAt(s, x, out) {
+  const xs = s.xs; let j = 0; while (j < xs.length && x >= xs[j]) j++;
+  const kr = s.Kr[j], ki = s.Ki[j], c = Math.cos(kr * x), sn = Math.sin(kr * x);
+  const mp = Math.exp(-ki * x), mm = Math.exp(ki * x);
+  const pr = s.Ar[j] * mp * c - s.Ai[j] * mp * sn, pi = s.Ar[j] * mp * sn + s.Ai[j] * mp * c;     // A e^{iKx}
+  const qr = s.Br[j] * mm * c + s.Bi[j] * mm * sn, qi = s.Bi[j] * mm * c - s.Br[j] * mm * sn;     // B e^{-iKx}
+  out[0] = pr + qr; out[1] = pi + qi;
+  // psi' = iK (A e^{iKx} − B e^{−iKx})
+  const dr = pr - qr, di = pi - qi;
+  out[2] = -kr * di - ki * dr; out[3] = kr * dr - ki * di;
+  return out;
+}
+
+let T1 = null;          // spectrum + stationary data
+let K1 = null;          // packet data
+const tmp4 = new Float64Array(4);
+
+function spectrum() {
+  const geo = geometry(P1.single), geo1 = geometry(true), V0 = P1.V0, Emax = 1.3 * V0;
+  const tau = E => tauOf(solveE(E, geo));
+  const Es = [], ts = [];
+  const N = 4000;
+  for (let i = 0; i < N; i++) { const E = Emax * Math.pow((i + 0.5) / N, 1.25); Es.push(E); ts.push(tau(E)); }
+  // resonances: for two identical barriers tau = 1 exactly where cos Phi = 0, with
+  // Phi(E) = phase(t1) + k (a + b)  (item 4 of the sheet). Phi is smooth, so its crossings of
+  // pi/2 + n pi are found reliably even for very narrow resonances.
+  const res = [], extra = [];
+  if (!P1.single) {
+    const Phi = E => Math.atan2(...(() => { const q = solveE(E, geo1); return [q.ti, q.tr]; })()) + Math.sqrt(2 * E) * (P1.a + 1);
+    const NP = 3000; let prevE = 0, prevP = null, off = 0, lastRaw = null;
+    const ph = [];
+    for (let i = 1; i <= NP; i++) {
+      const E = Emax * i / NP; let raw = Phi(E);
+      if (lastRaw !== null) { while (raw + off - lastRaw > PI) off -= TAU; while (raw + off - lastRaw < -PI) off += TAU; }
+      raw += off; lastRaw = raw; ph.push([E, raw, off]);
+    }
+    for (let i = 1; i < ph.length; i++) {
+      const [Ea, pa, oa] = ph[i - 1], [Eb, pb] = ph[i];
+      const na = Math.floor((pa - PI / 2) / PI), nb = Math.floor((pb - PI / 2) / PI);
+      if (na === nb) continue;
+      const target = PI / 2 + Math.max(na, nb) * PI;
+      // bisection on the unwrapped phase between the two grid points
+      let lo = Ea, hi = Eb, plo = pa;
+      const unwrapAt = (E, ref) => { let v = Phi(E); while (v - ref > PI) v -= TAU; while (v - ref < -PI) v += TAU; return v; };
+      for (let it = 0; it < 70; it++) { const mid = 0.5 * (lo + hi), pm = unwrapAt(mid, plo); if ((pm - target) * (plo - target) > 0) { lo = mid; plo = pm; } else hi = mid; }
+      const Ep = 0.5 * (lo + hi), tp = tau(Ep), half = 0.5 * tp;
+      const edge = dir => { let st = Math.max(1e-7, 1e-5 * Ep), x = Ep; while (tau(x + dir * st) > half && st < V0) st *= 1.6; let a2 = x, b2 = x + dir * st; for (let it = 0; it < 60; it++) { const mid = 0.5 * (a2 + b2); if (tau(mid) > half) a2 = mid; else b2 = mid; } return 0.5 * (a2 + b2); };
+      const El = edge(-1), Er = edge(1);
+      res.push({ E: Ep, tau: tp, G: Er - El });
+      for (let k = -40; k <= 40; k++) extra.push(Ep + k * (Er - El) / 8);
+    }
+  }
+  for (const E of extra) if (E > 0 && E < Emax) { Es.push(E); ts.push(tau(E)); }
+  const idx = Es.map((_, i) => i).sort((a, b) => Es[a] - Es[b]);
+  const E = Float64Array.from(idx, i => Es[i]), t = Float64Array.from(idx, i => ts[i]);
+  const t1 = Float64Array.from(E, e => tauOf(solveE(e, geo1)));
+  T1 = { geo, geo1, E, t, t1, res, Emax };
+}
+function nearestRes(E) {
+  if (!T1 || P1.single || !T1.res.length) return null;
+  let best = null; for (const r of T1.res) if (!best || Math.abs(r.E - E) < Math.abs(best.E - E)) best = r;
+  return best;
+}
+
+// packet: Gaussian ψ0 = (2πσ²)^(-1/4) exp(−(x−x0)²/4σ² + i k0 x), expanded in scattering states
+function setupPacket() {
+  const geo = geometry(P1.single), x1 = geo.xs[0], x4 = geo.xs[geo.xs.length - 1];
+  const sig = P1.sigma, k0 = Math.sqrt(2 * P1.E0), sk = 1 / (2 * sig);
+  const kmin = Math.max(k0 - 5 * sk, 0.02), kmax = k0 + 5 * sk;
+  const Nk = 420, dk = (kmax - kmin) / (Nk - 1);
+  const x0 = x1 - 4 * sig - 3;
+  const v0 = k0;
+  const r = nearestRes(P1.E0), life = r ? 1 / r.G : 0;
+  const tEnd = Math.min(2.1 * Math.abs(x0) / v0 + Math.min(4 * life, 260), 400);
+  const Xd = Math.max(Math.abs(x0) + 4 * sig, v0 * tEnd - Math.abs(x0) + 4 * sig) * 1.02;
+  // full display grid
+  const lam = TAU / kmax, Nx = clamp(Math.ceil(2 * Xd / (lam / 6)), 900, 4200);
+  const xF = Float64Array.from({ length: Nx }, (_, i) => -Xd + 2 * Xd * i / (Nx - 1));
+  const cl0 = x1 - 1.6, cl1 = x4 + 1.6, Nc = 420;
+  const xC = Float64Array.from({ length: Nc }, (_, i) => cl0 + (cl1 - cl0) * i / (Nc - 1));
+  const wr = new Float64Array(Nk), wi = new Float64Array(Nk), Ek = new Float64Array(Nk);
+  const BF = new Float32Array(2 * Nk * Nx), BC = new Float32Array(2 * Nk * Nc);
+  const edgeL = new Float64Array(4 * Nk), edgeR = new Float64Array(4 * Nk);
+  const pref = Math.pow(2 * sig * sig / PI, 0.25) / Math.sqrt(TAU);
+  let Tinf = 0, Tinc = 0, norm = 0;
+  const geo1 = geometry(true);
+  for (let n = 0; n < Nk; n++) {
+    const k = kmin + n * dk, E = 0.5 * k * k; Ek[n] = E;
+    const wt = (n === 0 || n === Nk - 1 ? 0.5 : 1) * dk;
+    const amp = pref * Math.exp(-sig * sig * (k - k0) * (k - k0)) * wt;
+    wr[n] = amp * Math.cos(-k * x0); wi[n] = amp * Math.sin(-k * x0);
+    const s = solveE(E, geo), tau = tauOf(s);
+    const p = Math.sqrt(2 * sig * sig / PI) * Math.exp(-2 * sig * sig * (k - k0) * (k - k0)) * wt;   // |φ(k)|² dk
+    norm += p; Tinf += p * tau;
+    const t1 = tauOf(solveE(E, geo1)); Tinc += p * (P1.single ? t1 : t1 / (2 - t1));
+    for (let i = 0; i < Nx; i++) { psiAt(s, xF[i], tmp4); BF[2 * (n * Nx + i)] = tmp4[0]; BF[2 * (n * Nx + i) + 1] = tmp4[1]; }
+    for (let i = 0; i < Nc; i++) { psiAt(s, xC[i], tmp4); BC[2 * (n * Nc + i)] = tmp4[0]; BC[2 * (n * Nc + i) + 1] = tmp4[1]; }
+    psiAt(s, x1, tmp4); edgeL.set(tmp4, 4 * n);
+    psiAt(s, x4, tmp4); edgeR.set(tmp4, 4 * n);
+  }
+  // time traces from the currents at the outer edges
+  const Nt = clamp(Math.ceil(tEnd / (0.08 * sig / v0)), 1500, 6000), dtT = tEnd / (Nt - 1);
+  const jL = new Float64Array(Nt), jR = new Float64Array(Nt);
+  const phr = new Float64Array(Nk), phi = new Float64Array(Nk);
+  for (let s = 0; s < Nt; s++) {
+    const t = s * dtT;
+    let aLr = 0, aLi = 0, dLr = 0, dLi = 0, aRr = 0, aRi = 0, dRr = 0, dRi = 0;
+    for (let n = 0; n < Nk; n++) {
+      const ph = -Ek[n] * t, c = Math.cos(ph), sn = Math.sin(ph);
+      const cr = wr[n] * c - wi[n] * sn, ci = wr[n] * sn + wi[n] * c;
+      const o = 4 * n;
+      aLr += cr * edgeL[o] - ci * edgeL[o + 1]; aLi += cr * edgeL[o + 1] + ci * edgeL[o];
+      dLr += cr * edgeL[o + 2] - ci * edgeL[o + 3]; dLi += cr * edgeL[o + 3] + ci * edgeL[o + 2];
+      aRr += cr * edgeR[o] - ci * edgeR[o + 1]; aRi += cr * edgeR[o + 1] + ci * edgeR[o];
+      dRr += cr * edgeR[o + 2] - ci * edgeR[o + 3]; dRi += cr * edgeR[o + 3] + ci * edgeR[o + 2];
+    }
+    jL[s] = aLr * dLi - aLi * dLr; jR[s] = aRr * dRi - aRi * dRr;     // Im(ψ* ψ')
+  }
+  const PL = new Float64Array(Nt), PR = new Float64Array(Nt), PM = new Float64Array(Nt);
+  let NL = 0, NR = 0; PL[0] = 1;
+  for (let s = 1; s < Nt; s++) { NL += 0.5 * (jL[s] + jL[s - 1]) * dtT; NR += 0.5 * (jR[s] + jR[s - 1]) * dtT; PL[s] = 1 - NL; PR[s] = NR; PM[s] = NL - NR; }
+  let sPk = 0; for (let s = 0; s < Nt; s++) if (PM[s] > PM[sPk]) sPk = s;
+  K1 = { geo, x1, x4, x0, k0, sig, Nk, Ek, wr, wi, Nx, xF, Xd, Nc, xC, BF, BC, tEnd, Nt, dtT, PL, PR, PM, sPk,
+         Tinf: Tinf / norm, Tinc: Tinc / norm, life, t: 0, rho0: 1 / (Math.sqrt(TAU) * sig), closeMax: 0,
+         bufF: new Float64Array(Nx), bufC: new Float64Array(Nc), phr, phi };
+  // fixed vertical scale of the close-up
+  let m = 0;
+  for (let q = 0; q <= 60; q++) { evalPacket(K1, tEnd * q / 60, true); for (let i = 0; i < Nc; i++) m = Math.max(m, K1.bufC[i]); }
+  K1.closeMax = m;
+  $("tScrub1").max = tEnd; $("tScrub1").step = tEnd / 4000;
+  $("rNk").textContent = Nk;
+}
+function evalPacket(K, t, closeOnly) {
+  const { Nk, Ek, wr, wi, Nx, Nc, BF, BC, bufF, bufC, phr, phi } = K;
+  for (let n = 0; n < Nk; n++) { const ph = -Ek[n] * t, c = Math.cos(ph), s = Math.sin(ph); phr[n] = wr[n] * c - wi[n] * s; phi[n] = wr[n] * s + wi[n] * c; }
+  const sum = (B, N, buf) => {
+    const re = new Float64Array(N), im = new Float64Array(N);
+    for (let n = 0; n < Nk; n++) {
+      const cr = phr[n], ci = phi[n]; if (Math.abs(cr) + Math.abs(ci) < 1e-14) continue;
+      let o = 2 * n * N;
+      for (let i = 0; i < N; i++, o += 2) { const br = B[o], bi = B[o + 1]; re[i] += cr * br - ci * bi; im[i] += cr * bi + ci * br; }
+    }
+    for (let i = 0; i < N; i++) buf[i] = re[i] * re[i] + im[i] * im[i];
+  };
+  if (!closeOnly) sum(BF, Nx, bufF);
+  sum(BC, Nc, bufC);
+}
+
+/* ---------- drawing, tab 1 ---------- */
+let specBox = null;
+function drawSpec() {
+  const cv = $("cvSpec"), { ctx, w, h } = prepCanvas(cv);
+  const box = { l: 48, t: 10, w: w - 60, h: h - 52 }; specBox = box;
+  const { E, t, t1, Emax } = T1, V0 = P1.V0;
+  let ymin = 0; for (let i = 0; i < E.length; i++) if (t[i] > 0) ymin = Math.min(ymin, Math.log10(t[i]));
+  ymin = Math.max(Math.floor(ymin), -10); if (ymin > -2) ymin = -2;
+  const xr = [0, Emax / V0], yr = [ymin, 0.3];
+  const { X, Y } = frame(ctx, box, xr, yr, ticks(0, xr[1], 0.2), logTicks(ymin, 0, 6), [["E", 0, 1], [" / ", 0, 0], ["V", 0, 1], ["0", 1, 0]], "transmission", true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  // packet energy distribution, scaled to the plot height
+  if (K1) {
+    const sig = P1.sigma, k0 = Math.sqrt(2 * P1.E0);
+    ctx.beginPath(); ctx.moveTo(X(0), Y(yr[0]));
+    for (let i = 0; i <= 400; i++) {
+      const e = xr[1] * V0 * i / 400, k = Math.sqrt(2 * e), p = Math.exp(-2 * sig * sig * (k - k0) * (k - k0));
+      ctx.lineTo(X(e / V0), Y(yr[0] + 0.85 * (yr[1] - yr[0]) * p));
+    }
+    ctx.lineTo(X(xr[1]), Y(yr[0])); ctx.closePath(); ctx.fillStyle = rgba(C.sep, 0.18); ctx.fill();
+  }
+  ctx.strokeStyle = C.rule; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(X(1), box.t); ctx.lineTo(X(1), box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
+  if (!P1.single) {
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); ctx.beginPath();
+    for (let i = 0; i < E.length; i++) { const x = X(E[i] / V0), y = Y(Math.log10(Math.max(t1[i], 1e-12))); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.strokeStyle = C.osc; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let i = 0; i < E.length; i++) { const x = X(E[i] / V0), y = Y(Math.log10(Math.max(t[i], 1e-12))); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  // E0 marker
+  ctx.strokeStyle = C.sep; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(P1.E0 / V0), box.t); ctx.lineTo(X(P1.E0 / V0), box.t + box.h); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "top";
+  drawRich(ctx, [["E", 0, 1], [" = ", 0, 0], ["V", 0, 1], ["0", 1, 0]], X(1) + 4, box.t + box.h - 18, 11, "left");
+}
+function drawProb() {
+  const { ctx, w, h } = prepCanvas($("cvProb"));
+  const box = { l: 44, t: 10, w: w - 56, h: h - 52 }, K = K1;
+  const st = niceStep(K.tEnd, 5);
+  const { X, Y } = frame(ctx, box, [0, K.tEnd], [0, 1.04], ticks(0, K.tEnd, st), ticks(0, 1, 0.25), "t", "probability", true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 2, box.w + 2, box.h + 2); ctx.clip();
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(box.l, Y(K.Tinf)); ctx.lineTo(box.l + box.w, Y(K.Tinf)); ctx.stroke(); ctx.setLineDash([]);
+  const line = (arr, col, lw) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+    const cols = Math.floor(box.w);
+    for (let c = 0; c <= cols; c++) { const s = Math.min(K.Nt - 1, Math.round(c / cols * (K.Nt - 1))); const x = box.l + c, y = Y(arr[s]); c ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  };
+  line(K.PL, C.muted, 1.4); line(K.PR, C.osc, 1.8); line(K.PM, C.sep, 1.8);
+  // exponential decay with the Breit–Wigner lifetime, from the peak of P_between
+  const r = nearestRes(P1.E0);
+  if (r && !P1.single && K.life < K.tEnd && K.PM[K.sPk] > 0.05) {
+    const t0 = K.sPk * K.dtT, p0 = K.PM[K.sPk];
+    ctx.strokeStyle = C.fg; ctx.lineWidth = 1.1; ctx.setLineDash([3, 3]); ctx.beginPath();
+    for (let i = 0; i <= 200; i++) { const tt = t0 + (K.tEnd - t0) * i / 200, y = Y(p0 * Math.exp(-(tt - t0) * r.G)); i ? ctx.lineTo(X(tt), y) : ctx.moveTo(X(tt), y); }
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.fg; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+    const tl = Math.min(t0 + K.life, K.tEnd * 0.8);
+    ctx.fillText("∝ exp(−Γt/ħ)", X(tl) + 4, Y(p0 * Math.exp(-(tl - t0) * r.G)) - 4);
+  }
+  const s = Math.min(K.Nt - 1, Math.round(K.t / K.dtT));
+  ctx.strokeStyle = C.fg; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(K.t), box.t); ctx.lineTo(X(K.t), box.t + box.h); ctx.stroke();
+  for (const [arr, col] of [[K.PL, C.muted], [K.PR, C.osc], [K.PM, C.sep]]) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(X(K.t), Y(arr[s]), 3.4, 0, TAU); ctx.fill(); }
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+  ctx.fillText(`dashed: ∫|c(k)|²τ dk = ${K.Tinf.toFixed(3)}`, box.l + box.w, Y(K.Tinf) - 3);
+  ctx.textBaseline = "top";
+  ctx.fillText(`${P1.single ? "one barrier" : "incoherent, ∫|c|²τ₁/(2−τ₁)"} = ${K.Tinc.toFixed(3)}`, box.l + box.w, Y(K.Tinf) + 3);
+}
+function drawPotentialClose(ctx, X, Y, top) {
+  const { xs, Vs } = K1.geo;
+  ctx.fillStyle = rgba(C.pot, 0.12); ctx.strokeStyle = C.pot; ctx.lineWidth = 1.2;
+  for (let j = 1; j < Vs.length; j += 2) {
+    const xa = X(xs[j - 1]), xb = X(xs[j]);
+    ctx.fillRect(xa, Y(top), xb - xa, Y(0) - Y(top));
+    ctx.beginPath(); ctx.moveTo(xa, Y(0)); ctx.lineTo(xa, Y(top)); ctx.moveTo(xb, Y(top)); ctx.lineTo(xb, Y(0)); ctx.stroke();
+  }
+}
+function drawFull() {
+  const { ctx, w, h } = prepCanvas($("cvFull"));
+  const box = { l: 44, t: 8, w: w - 54, h: h - 50 }, K = K1;
+  const top = 1.25 * K.rho0, st = niceStep(2 * K.Xd, 8);
+  const { X, Y } = frame(ctx, box, [-K.Xd, K.Xd], [0, top], ticks(-K.Xd, K.Xd, st), [[0, "0"]], "x", "|ψ|²", true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  ctx.strokeStyle = C.pot; ctx.lineWidth = 1.2;
+  for (const x of K.geo.xs) { ctx.beginPath(); ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), box.t); ctx.stroke(); }
+  // min/max per pixel column, robust against aliasing of fast ripples
+  const cols = Math.floor(box.w), buf = K.bufF, N = K.Nx;
+  ctx.fillStyle = rgba(C.osc, 0.25); ctx.strokeStyle = C.osc; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(box.l, Y(0));
+  const hiArr = new Float64Array(cols + 1);
+  for (let c = 0; c <= cols; c++) {
+    const i0 = Math.floor(c / (cols + 1) * N), i1 = Math.max(i0 + 1, Math.floor((c + 1) / (cols + 1) * N));
+    let hi = 0; for (let i = i0; i < i1 && i < N; i++) hi = Math.max(hi, buf[i]);
+    hiArr[c] = hi; ctx.lineTo(box.l + c, Y(Math.min(hi, top)));
+  }
+  ctx.lineTo(box.l + cols, Y(0)); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); for (let c = 0; c <= cols; c++) { const y = Y(Math.min(hiArr[c], top)); c ? ctx.lineTo(box.l + c, y) : ctx.moveTo(box.l + c, y); } ctx.stroke();
+  ctx.restore();
+}
+function drawClose() {
+  const { ctx, w, h } = prepCanvas($("cvClose"));
+  const box = { l: 44, t: 8, w: w - 54, h: h - 50 }, K = K1;
+  const xr = [K.xC[0], K.xC[K.Nc - 1]];
+  // stationary state at E0 (amplitude 1 incident), scaled to the same height
+  const s = solveE(P1.E0, K.geo), Ns = 600, st = new Float64Array(Ns);
+  let smax = 0;
+  for (let i = 0; i < Ns; i++) { psiAt(s, xr[0] + (xr[1] - xr[0]) * i / (Ns - 1), tmp4); st[i] = tmp4[0] * tmp4[0] + tmp4[1] * tmp4[1]; smax = Math.max(smax, st[i]); }
+  const top = 1.08;
+  const { X, Y } = frame(ctx, box, xr, [0, top], ticks(xr[0], xr[1], 0.5), [], "x", "|ψ|² (scaled)", true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  drawPotentialClose(ctx, X, Y, top);
+  ctx.strokeStyle = C.sep; ctx.lineWidth = 1.3; ctx.setLineDash([5, 4]); ctx.beginPath();
+  for (let i = 0; i < Ns; i++) { const x = X(xr[0] + (xr[1] - xr[0]) * i / (Ns - 1)), y = Y(st[i] / smax); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke(); ctx.setLineDash([]);
+  const buf = K.bufC, sc = 1 / (K.closeMax || 1);
+  ctx.fillStyle = rgba(C.osc, 0.22); ctx.beginPath(); ctx.moveTo(X(xr[0]), Y(0));
+  for (let i = 0; i < K.Nc; i++) ctx.lineTo(X(K.xC[i]), Y(buf[i] * sc));
+  ctx.lineTo(X(xr[1]), Y(0)); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C.osc; ctx.lineWidth = 1.6; ctx.beginPath();
+  for (let i = 0; i < K.Nc; i++) { const x = X(K.xC[i]), y = Y(buf[i] * sc); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "right"; ctx.textBaseline = "top";
+  const t1 = tauOf(solveE(P1.E0, geometry(true)));
+  ctx.fillText(`stationary state: max |ψE|² = ${fmtSig(smax, 3)}${P1.single ? "" : `,  4/τ₁ = ${fmtSig(4 / t1, 3)}`},  incident |ψ|² = 1`, box.l + box.w - 4, box.t + 2);
+}
+function drawAll1() {
+  if (!T1 || !K1) return;
+  evalPacket(K1, K1.t);
+  drawSpec(); drawProb(); drawFull(); drawClose();
+  $("rT1").textContent = K1.t.toFixed(K1.tEnd > 50 ? 1 : 2);
+  if (document.activeElement !== $("tScrub1")) $("tScrub1").value = K1.t;
+}
+function readouts1() {
+  const s = solveE(P1.E0, geometry(P1.single)), s1 = solveE(P1.E0, geometry(true));
+  $("rTau").textContent = fmtSig(tauOf(s), 3); $("rTau1").textContent = fmtSig(tauOf(s1), 3);
+  const r = nearestRes(P1.E0);
+  $("rResWrap").hidden = !r;
+  if (r) { $("rEn").textContent = r.E.toFixed(3); $("rG").textContent = fmtSig(r.G, 2); $("rLife").textContent = fmtSig(1 / r.G, 3); }
+}
+
+/* ======================= TAB 2: Yukawa and Born ======================= */
+// units ħ = m = 1, μ = 1: V(r) = g e^{−r}/r, u'' = [l(l+1)/r² + 2V − k²] u
+const P2 = { g: 0.1, k: 0.3, pic: "sc", ruth: true, playing: true };
+const PRE2 = { weakLow: { g: 0.1, k: 0.3 }, weakHigh: { g: 0.1, k: 3 }, rep: { g: 2, k: 0.6 }, att: { g: -2, k: 0.6 }, coul: { g: 0.1, k: 4 } };
+const kFromU = u => 0.05 * Math.pow(100, u);     // 0.05 … 5
+const uFromK = k => Math.log(k / 0.05) / Math.log(100);
+const RM = 30, RPIC = 12;
+
+// Riccati–Bessel functions ĵ_l(x) = x j_l(x), n̂_l(x) = x y_l(x), l = 0..L
+function riccati(x, L) {
+  const nh = new Float64Array(L + 2), jh = new Float64Array(L + 2);
+  nh[0] = -Math.cos(x); nh[1] = -Math.cos(x) / x - Math.sin(x);
+  for (let l = 1; l <= L; l++) nh[l + 1] = (2 * l + 1) / x * nh[l] - nh[l - 1];
+  // Miller's downward recursion for ĵ
+  const Ls = L + 30 + Math.ceil(x);
+  let jp = 0, jc = 1e-300; const tmp = new Float64Array(Ls + 2);
+  for (let l = Ls; l >= 1; l--) { const jm = (2 * l + 1) / x * jc - jp; jp = jc; jc = jm; if (l - 1 <= L + 1) tmp[l - 1] = jc; if (Math.abs(jc) > 1e250) { jc *= 1e-250; jp *= 1e-250; for (let q = l - 1; q <= Math.min(L + 1, Ls); q++) tmp[q] *= 1e-250; } }
+  const s0 = Math.sin(x), s1 = Math.sin(x) / x - Math.cos(x);
+  const scale = Math.abs(s0) > Math.abs(s1) ? s0 / tmp[0] : s1 / tmp[1];
+  for (let l = 0; l <= L + 1; l++) jh[l] = tmp[l] * scale;
+  return { jh, nh };
+}
+// one partial wave: phase shift, and (optionally) the normalized u_l(r) on [0, rStore]
+function partialWave(g, k, l, h, nStore, ricc1, ricc2, i1, N) {
+  const ll = l * (l + 1), h12 = h * h / 12;
+  const f = r => ll / (r * r) + 2 * g * Math.exp(-r) / r - k * k;
+  const u = nStore ? new Float64Array(nStore) : null;
+  // start where the centrifugal term is tame: l(l+1) h²/(12 r²) < 0.1
+  let i0 = Math.max(1, Math.ceil(Math.sqrt(ll / 1.2)));
+  if (i0 > N - 20) return { delta: 0, u };
+  // series start u ≈ r^{l+1} (1 + g r/(l+1)) near the origin
+  const ser = r => 1 + g * r / (l + 1);
+  let um = 1e-200, uc = 1e-200 * Math.pow((i0 + 1) / i0, l + 1) * ser((i0 + 1) * h) / ser(i0 * h);
+  let fm = f(i0 * h), fc = f((i0 + 1) * h);
+  if (u) { if (i0 < nStore) u[i0] = um; if (i0 + 1 < nStore) u[i0 + 1] = uc; }
+  let u1 = 0;
+  for (let i = i0 + 1; i < N; i++) {
+    const fp = f((i + 1) * h);
+    const up = (2 * uc * (1 + 5 * h12 * fc) - um * (1 - h12 * fm)) / (1 - h12 * fp);
+    um = uc; uc = up; fm = fc; fc = fp;
+    if (u && i + 1 < nStore) u[i + 1] = uc;
+    if (Math.abs(uc) > 1e200) { um *= 1e-200; uc *= 1e-200; u1 *= 1e-200; if (u) for (let q = 0; q < Math.min(i + 2, nStore); q++) u[q] *= 1e-200; }
+    if (i + 1 === i1) u1 = uc;
+  }
+  const u2 = uc;   // at r = N h
+  const R = u1 / u2;
+  const num = ricc1.jh[l] - R * ricc2.jh[l], den = ricc1.nh[l] - R * ricc2.nh[l];
+  const delta = Math.atan(num / den);
+  const cs = Math.cos(delta), sn = Math.sin(delta);
+  const a2 = ricc2.jh[l] * cs - ricc2.nh[l] * sn, a1 = ricc1.jh[l] * cs - ricc1.nh[l] * sn;
+  const Cn = Math.abs(a2) > Math.abs(a1) ? u2 / a2 : u1 / a1;
+  if (u) for (let q = 0; q < nStore; q++) u[q] /= Cn;
+  return { delta, u };
+}
+function phaseShifts(g, k, L, wantU) {
+  const h = Math.min(0.01, 0.1 / k), N = Math.ceil(RM / h), i1 = N - 20;
+  const rc1 = riccati(k * i1 * h, L + 1), rc2 = riccati(k * N * h, L + 1);
+  const nStore = wantU ? Math.ceil(RPIC * Math.SQRT2 / h) + 3 : 0;
+  const d = new Float64Array(L + 1), U = [];
+  for (let l = 0; l <= L; l++) { const pw = partialWave(g, k, l, h, nStore, rc1, rc2, i1, N); d[l] = pw.delta; if (wantU) U.push(pw.u); }
+  return { d, U, h };
+}
+const lmaxSigma = k => Math.min(140, Math.ceil(9 * k + 18));
+const sigmaExact = (d, k) => { let s = 0; for (let l = 0; l < d.length; l++) s += (2 * l + 1) * Math.sin(d[l]) ** 2; return 4 * PI * s / (k * k); };
+const sigmaBorn = (g, k) => 16 * PI * g * g / (1 + 4 * k * k);
+
+let T2 = null, S2 = null, picDirty = true;
+function setup2() {
+  const g = P2.g, k = P2.k;
+  const L = Math.max(lmaxSigma(k), Math.min(150, Math.ceil(k * RPIC * Math.SQRT2 + 12)));
+  const ps = phaseShifts(g, k, L, true);
+  // f(θ) = (1/k) Σ (2l+1) e^{iδ} sin δ P_l(cos θ)
+  const NT = 361, th = new Float64Array(NT), fe = new Float64Array(NT), fb = new Float64Array(NT), fr = new Float64Array(NT);
+  for (let i = 0; i < NT; i++) {
+    const t = PI * i / (NT - 1), c = Math.cos(t); th[i] = t;
+    let p0 = 1, p1 = c, sr = 0, si = 0;
+    for (let l = 0; l <= L; l++) {
+      const P = l === 0 ? 1 : (l === 1 ? c : 0);
+      let Pl = P;
+      if (l >= 2) { Pl = ((2 * l - 1) * c * p1 - (l - 1) * p0) / l; p0 = p1; p1 = Pl; }
+      const dl = ps.d[l], a = (2 * l + 1) * Math.sin(dl);
+      sr += a * Math.cos(dl) * Pl; si += a * Math.sin(dl) * Pl;
+    }
+    fe[i] = (sr * sr + si * si) / (k * k);
+    const q2 = 4 * k * k * Math.sin(t / 2) ** 2;
+    fb[i] = 4 * g * g / ((q2 + 1) ** 2);
+    fr[i] = q2 > 0 ? 4 * g * g / (q2 * q2) : Infinity;
+  }
+  let nPW = 0; for (let l = 0; l <= L; l++) if (Math.abs(Math.sin(ps.d[l])) > 0.01) nPW = l + 1;
+  T2 = { g, k, L, ps, th, fe, fb, fr, sE: sigmaExact(ps.d, k), sB: sigmaBorn(g, k), nPW, pic: null };
+  picDirty = true;
+}
+function setupSigma() {
+  const g = P2.g, NK = 46, ks = new Float64Array(NK), se = new Float64Array(NK), sb = new Float64Array(NK);
+  for (let i = 0; i < NK; i++) {
+    const k = 0.05 * Math.pow(6 / 0.05, i / (NK - 1)); ks[i] = k;
+    se[i] = sigmaExact(phaseShifts(g, k, lmaxSigma(k), false).d, k); sb[i] = sigmaBorn(g, k);
+  }
+  S2 = { g, ks, se, sb };
+}
+// exact ψ on a grid in the x–z plane
+const MPIX = 170;
+function setupPicture() {
+  const { k, L, ps } = T2, h = ps.h, M = MPIX;
+  const re = new Float32Array(M * M), im = new Float32Array(M * M), inc = new Float32Array(2 * M * M);
+  const cr = new Float64Array(L + 1), ci = new Float64Array(L + 1);
+  for (let l = 0; l <= L; l++) { const ph = l * PI / 2 + ps.d[l]; cr[l] = (2 * l + 1) * Math.cos(ph) / k; ci[l] = (2 * l + 1) * Math.sin(ph) / k; }
+  for (let iy = 0; iy < M; iy++) for (let ix = 0; ix < M; ix++) {
+    const z = -RPIC + 2 * RPIC * (ix + 0.5) / M, x = RPIC - 2 * RPIC * (iy + 0.5) / M;
+    const r = Math.hypot(x, z), c = z / r, pos = r / h, i0 = Math.floor(pos), fr = pos - i0;
+    let p0 = 1, p1 = c, sr = 0, si = 0;
+    const lmax = Math.min(L, Math.ceil(k * r + 14));
+    for (let l = 0; l <= lmax; l++) {
+      let Pl; if (l === 0) Pl = 1; else if (l === 1) Pl = c; else { Pl = ((2 * l - 1) * c * p1 - (l - 1) * p0) / l; p0 = p1; p1 = Pl; }
+      const U = ps.U[l]; const ur = (U[i0] * (1 - fr) + U[i0 + 1] * fr) / r;
+      sr += cr[l] * ur * Pl; si += ci[l] * ur * Pl;
+    }
+    const o = iy * M + ix; re[o] = sr; im[o] = si;
+    inc[2 * o] = Math.cos(k * z); inc[2 * o + 1] = Math.sin(k * z);
+  }
+  // scale for the scattered-wave view: max of r|ψ_sc| outside r = 2
+  let scm = 0;
+  for (let iy = 0; iy < M; iy++) for (let ix = 0; ix < M; ix++) {
+    const z = -RPIC + 2 * RPIC * (ix + 0.5) / M, x = RPIC - 2 * RPIC * (iy + 0.5) / M, r = Math.hypot(x, z);
+    if (r < 2) continue; const o = iy * M + ix, a = re[o] - inc[2 * o], b = im[o] - inc[2 * o + 1];
+    scm = Math.max(scm, r * Math.hypot(a, b));
+  }
+  T2.pic = { re, im, inc, scm };
+  picDirty = false;
+}
+let picPhase = 0;
+const picCanvas = document.createElement("canvas");
+function drawPic() {
+  const { ctx, w, h } = prepCanvas($("cvPic"));
+  if (picDirty) setupPicture();
+  const M = MPIX, { re, im, inc, scm } = T2.pic, sc = P2.pic === "sc";
+  picCanvas.width = M; picCanvas.height = M;
+  const pctx = picCanvas.getContext("2d"), img = pctx.createImageData(M, M);
+  const [r1, g1, b1] = hexToRgb(C.sep), [r2, g2, b2] = hexToRgb(C.osc), [r0, g0, b0] = hexToRgb(C.surface);
+  const cp = Math.cos(picPhase), sp = Math.sin(picPhase);
+  for (let iy = 0; iy < M; iy++) for (let ix = 0; ix < M; ix++) {
+    const o = iy * M + ix;
+    let a = re[o], b = im[o], v;
+    if (sc) {
+      const z = -RPIC + 2 * RPIC * (ix + 0.5) / M, x = RPIC - 2 * RPIC * (iy + 0.5) / M, r = Math.hypot(x, z);
+      a -= inc[2 * o]; b -= inc[2 * o + 1];
+      v = r * (a * cp + b * sp) / (scm || 1);
+    } else v = (a * cp + b * sp) / 1.6;      // Re(ψ e^{−iωt})
+    v = clamp(v, -1, 1); const s = Math.pow(Math.abs(v), 0.8);
+    const [rr, gg, bb] = v > 0 ? [r1, g1, b1] : [r2, g2, b2];
+    img.data[4 * o] = r0 + (rr - r0) * s; img.data[4 * o + 1] = g0 + (gg - g0) * s; img.data[4 * o + 2] = b0 + (bb - b0) * s; img.data[4 * o + 3] = 255;
+  }
+  pctx.putImageData(img, 0, 0);
+  const side = Math.min(w, h) - 30, ox = (w - side) / 2 + 8, oy = 4;
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(picCanvas, ox, oy, side, side);
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.strokeRect(ox, oy, side, side);
+  const X = z => ox + (z + RPIC) / (2 * RPIC) * side, Y = x => oy + (RPIC - x) / (2 * RPIC) * side;
+  ctx.strokeStyle = C.fg; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(X(0), Y(0), side / (2 * RPIC), 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const v of [-10, -5, 0, 5]) ctx.fillText(numLabel(v), X(v), oy + side + 3);
+  drawRich(ctx, [["zμ", 0, 1]], ox + side, oy + side + 3, 12, "right");
+  ctx.font = FONT(11); ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const v of [-10, 0, 10]) ctx.fillText(numLabel(v), ox - 4, Y(v));
+  // beam arrow
+  ctx.strokeStyle = C.fg; ctx.fillStyle = C.fg; ctx.lineWidth = 1.5;
+  const ay = oy + 12, ax0 = ox + 8, ax1 = ox + 44;
+  ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1, ay); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax1 + 6, ay); ctx.lineTo(ax1 - 1, ay - 4); ctx.lineTo(ax1 - 1, ay + 4); ctx.closePath(); ctx.fill();
+}
+function drawDsig() {
+  const { ctx, w, h } = prepCanvas($("cvDsig"));
+  const box = { l: 48, t: 10, w: w - 60, h: h - 52 }, { th, fe, fb, fr } = T2;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < th.length; i++) for (const v of [fe[i], fb[i]]) if (v > 0) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  let ylo = Math.floor(Math.log10(lo) - 0.2), yhi = Math.ceil(Math.log10(hi) + 0.2);
+  if (yhi - ylo < 2) ylo = yhi - 2;
+  ylo = Math.max(ylo, yhi - 9);
+  const xt = [[0, "0"], [PI / 4, "45°"], [PI / 2, "90°"], [3 * PI / 4, "135°"], [PI, "180°"]];
+  const { X, Y } = frame(ctx, box, [0, PI], [ylo, yhi], xt, logTicks(ylo, yhi, 6), "θ", [["dσ/dΩ", 0, 0], ["  (1/μ²)", 0, 0]], true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  const curve = (arr, col, lw, dash) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.beginPath(); let on = false;
+    for (let i = 0; i < th.length; i++) { const v = arr[i]; if (!(v > 0) || !isFinite(v)) { on = false; continue; } const x = X(th[i]), y = Y(Math.min(Math.log10(v), yhi + 1)); on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  if (P2.ruth) curve(fr, C.sep, 1.3);
+  curve(fb, C.fg, 1.4, [5, 4]);
+  curve(fe, C.osc, 2);
+  // forward-peak scale θ ~ ħμ/k
+  const tc = 1 / T2.k;
+  if (tc < PI / 2) {
+    ctx.strokeStyle = C.rule; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X(tc), box.t); ctx.lineTo(X(tc), box.t + box.h); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "top";
+    drawRich(ctx, [["θ = ħμ/", 0, 0], ["k", 0, 1]], X(tc) + 4, box.t + 2, 11, "left");
+  }
+  ctx.restore();
+}
+let sigBox = null;
+function drawSig() {
+  const { ctx, w, h } = prepCanvas($("cvSig"));
+  const box = { l: 48, t: 10, w: w - 60, h: h - 50 }; sigBox = box;
+  const { ks, se, sb } = S2;
+  let lo = Infinity, hi = -Infinity; for (let i = 0; i < ks.length; i++) for (const v of [se[i], sb[i]]) if (v > 0) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  let ylo = Math.floor(Math.log10(lo)), yhi = Math.ceil(Math.log10(hi) + 0.1); if (yhi - ylo < 2) ylo = yhi - 2;
+  const xr = [Math.log10(0.05), Math.log10(6)];
+  const xt = [[Math.log10(0.05), "0.05"], [-1, "0.1"], [Math.log10(0.3), "0.3"], [0, "1"], [Math.log10(3), "3"]];
+  const { X, Y } = frame(ctx, box, xr, [ylo, yhi], xt, logTicks(ylo, yhi, 5), [["k", 0, 1], [" / ħμ", 0, 0]], [["σ", 0, 0], [" (1/μ²)", 0, 0]], true);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  const curve = (arr, col, lw, dash) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.beginPath(); for (let i = 0; i < ks.length; i++) { const x = X(Math.log10(ks[i])), y = Y(Math.log10(Math.max(arr[i], 1e-30))); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.setLineDash([]); };
+  curve(sb, C.fg, 1.4, [5, 4]); curve(se, C.osc, 2);
+  const xk = X(Math.log10(P2.k));
+  ctx.strokeStyle = C.sep; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(xk, box.t); ctx.lineTo(xk, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.sep; ctx.beginPath(); ctx.arc(xk, Y(Math.log10(T2.sE)), 4, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function readouts2() {
+  $("rSe").textContent = fmtSig(T2.sE, 3); $("rSb").textContent = fmtSig(T2.sB, 3); $("rL").textContent = T2.nPW;
+  const g = Math.abs(P2.g), hi = g / P2.k, ok = g <= 0.1 || hi < 0.05, bad = g > 0.6 && hi > 0.3;
+  const chip = $("rValid");
+  chip.textContent = ok ? "Born reliable" : (bad ? "Born fails" : "Born marginal");
+  chip.style.color = ok ? C.rot : (bad ? C.sep : C.muted);
+  chip.title = `|g| = ${g.toFixed(2)},  |g|ħμ/k = ${hi.toFixed(2)}`;
+}
+function drawAll2() { if (!T2 || !S2) return; drawDsig(); drawPic(); drawSig(); readouts2(); }
+
+/* ======================= UI ======================= */
+let tab = 1;
+function labels() {
+  $("V0v").textContent = P1.V0.toFixed(0); $("aav").textContent = P1.a.toFixed(3);
+  $("E0v").textContent = (P1.E0 / P1.V0).toFixed(4) + `  (E₀ = ${P1.E0.toFixed(3)})`;
+  $("sgv").textContent = P1.sigma.toFixed(P1.sigma < 3 ? 2 : 1);
+  const k0 = Math.sqrt(2 * P1.E0), dE = k0 / (2 * P1.sigma);
+  $("sgHint").innerHTML = `energy spread δ<span class="m">E</span> ≈ ħ<span class="m">v</span>/2σ = ${fmtSig(dE, 2)}`;
+  $("sp1v").textContent = P1.speed.toFixed(2) + "×";
+  $("ggv").textContent = (P2.g > 0 ? "+" : "") + P2.g.toFixed(2); $("kkv").textContent = P2.k.toFixed(P2.k < 1 ? 3 : 2);
+}
+function syncInputs() {
+  $("V0").value = P1.V0; $("aa").value = P1.a; $("single").checked = P1.single;
+  $("E0").value = clamp(P1.E0 / P1.V0, 0, 1); $("sg").value = uFromSg(P1.sigma);
+  $("sp1").value = (Math.log10(P1.speed) + 1) / 2;
+  $("gg").value = P2.g; $("kk").value = uFromK(P2.k);
+  labels();
+}
+function markPresets() {
+  for (const b of document.querySelectorAll("[data-preset1]")) b.setAttribute("aria-pressed", String(b.dataset.preset1 === cur1));
+  for (const b of document.querySelectorAll("[data-preset2]")) { const p = PRE2[b.dataset.preset2]; b.setAttribute("aria-pressed", String(Math.abs(p.g - P2.g) < 1e-9 && Math.abs(p.k - P2.k) < 1e-9)); }
+}
+let cur1 = "res";
+// recompute: spectrum and readouts at once, packet a little later (it is the expensive part)
+let packTimer = 0;
+function update1(geomChanged, packetNow) {
+  if (geomChanged || !T1) spectrum();
+  readouts1(); labels();
+  clearTimeout(packTimer);
+  const go = () => { setPlay1(false); setupPacket(); drawAll1(); };
+  if (packetNow) go(); else { if (K1) { drawSpec(); drawClose(); } packTimer = setTimeout(go, 160); }
+  markPresets();
+}
+let t2Timer = 0, s2Timer = 0;
+function update2(gChanged, now) {
+  labels(); markPresets();
+  clearTimeout(t2Timer);
+  const go = () => { setup2(); if (gChanged || !S2) setupSigma(); drawAll2(); };
+  if (now) go(); else t2Timer = setTimeout(go, 60);
+}
+function applyPreset1(name) {
+  const p = PRE1[name]; cur1 = name;
+  P1.V0 = p.V0; P1.a = p.a; P1.single = p.single; P1.sigma = p.sigma;
+  if (p.snap || p.snapDouble) {
+    P1.single = false; spectrum();
+    const n = (p.snap || p.snapDouble) - 1; P1.E0 = T1.res[Math.min(n, T1.res.length - 1)].E;
+    P1.single = p.single;
+  } else P1.E0 = p.E0;
+  syncInputs(); update1(true, true);
+}
+function setTab(k) {
+  tab = k;
+  for (const [id, n] of [["tab1", 1], ["tab2", 2]]) { const b = $(id); b.setAttribute("aria-selected", String(n === k)); b.tabIndex = n === k ? 0 : -1; }
+  for (const el of document.querySelectorAll("[data-tab]")) el.hidden = +el.dataset.tab !== k;
+  $("plots1").hidden = k !== 1; $("plots2").hidden = k !== 2; $("tb1").hidden = k !== 1; $("tb2").hidden = k !== 2;
+  $("notes1").hidden = k !== 1; $("notes2").hidden = k !== 2;
+  if (k === 1) { setPlay1(false); drawAll1(); }
+  else { if (!T2) update2(true, true); else drawAll2(); }
+}
+$("tab1").addEventListener("click", () => setTab(1));
+$("tab2").addEventListener("click", () => setTab(2));
+$("tab1").parentElement.addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const k = tab === 1 ? 2 : 1; setTab(k); $("tab" + k).focus(); e.preventDefault(); } });
+
+for (const b of document.querySelectorAll("[data-preset1]")) b.addEventListener("click", () => applyPreset1(b.dataset.preset1));
+$("V0").addEventListener("input", () => { const r = P1.E0 / P1.V0; P1.V0 = +$("V0").value; P1.E0 = r * P1.V0; cur1 = ""; update1(true); });
+$("aa").addEventListener("input", () => { P1.a = +$("aa").value; cur1 = ""; update1(true); });
+$("single").addEventListener("change", e => { P1.single = e.target.checked; cur1 = ""; update1(true); });
+$("E0").addEventListener("input", () => { P1.E0 = Math.max(1e-3, +$("E0").value * P1.V0); cur1 = ""; update1(false); });
+$("sg").addEventListener("input", () => { P1.sigma = +sgFromU(+$("sg").value).toPrecision(3); cur1 = ""; update1(false); });
+$("sp1").addEventListener("input", () => { P1.speed = Math.pow(10, 2 * +$("sp1").value - 1); labels(); });
+$("snap").addEventListener("click", () => {
+  const was = P1.single; P1.single = false; spectrum(); const r = nearestRes(P1.E0); P1.single = was;
+  if (r) { P1.E0 = r.E; cur1 = ""; syncInputs(); update1(true, true); }
+});
+$("cvSpec").addEventListener("click", ev => {
+  if (!specBox) return; const r = $("cvSpec").getBoundingClientRect(), x = ev.clientX - r.left;
+  const e = (x - specBox.l) / specBox.w * T1.Emax; if (e <= 0 || e > T1.Emax) return;
+  P1.E0 = e; cur1 = ""; syncInputs(); update1(false);
+});
+$("tScrub1").addEventListener("input", () => { setPlay1(false); K1.t = +$("tScrub1").value; drawAll1(); });
+let playing1 = false;
+const setPlay1 = v => { playing1 = v; $("play1").textContent = v ? "Pause" : "Play"; };
+$("play1").addEventListener("click", () => { if (K1 && K1.t >= K1.tEnd - 1e-9) K1.t = 0; setPlay1(!playing1); });
+$("restart1").addEventListener("click", () => { K1.t = 0; drawAll1(); });
+
+for (const b of document.querySelectorAll("[data-preset2]")) b.addEventListener("click", () => { const p = PRE2[b.dataset.preset2]; const gc = p.g !== P2.g; P2.g = p.g; P2.k = p.k; syncInputs(); update2(gc, true); });
+$("gg").addEventListener("input", () => { let g = +$("gg").value; if (Math.abs(g) < 0.01) g = g < 0 ? -0.01 : 0.01; P2.g = g; clearTimeout(s2Timer); labels(); s2Timer = setTimeout(() => update2(true, true), 120); });
+$("kk").addEventListener("input", () => { P2.k = +kFromU(+$("kk").value).toPrecision(3); update2(false); });
+$("picTot").addEventListener("change", () => { P2.pic = "tot"; drawPic(); });
+$("picSc").addEventListener("change", () => { P2.pic = "sc"; drawPic(); });
+$("ruth").addEventListener("change", e => { P2.ruth = e.target.checked; $("keyRuth").hidden = !P2.ruth; drawDsig(); });
+$("play2").addEventListener("click", () => { P2.playing = !P2.playing; $("play2").textContent = P2.playing ? "Pause" : "Play"; });
+$("cvSig").addEventListener("click", ev => {
+  if (!sigBox) return; const r = $("cvSig").getBoundingClientRect(), x = ev.clientX - r.left;
+  const lk = Math.log10(0.05) + (x - sigBox.l) / sigBox.w * (Math.log10(6) - Math.log10(0.05));
+  P2.k = +clamp(Math.pow(10, lk), 0.05, 5).toPrecision(3); syncInputs(); update2(false, true);
+});
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  if (tab === 1 && playing1 && K1) {
+    // speed 1×: the whole run takes about 25 s
+    K1.t += dt * P1.speed * K1.tEnd / 25;
+    if (K1.t >= K1.tEnd) { K1.t = K1.tEnd; setPlay1(false); }
+    drawAll1();
+  }
+  if (tab === 2 && P2.playing && T2 && T2.pic) { picPhase += dt * TAU / 1.4; drawPic(); }
+  requestAnimationFrame(loop);
+}
+const themeChange = () => { readColors(); tab === 1 ? drawAll1() : drawAll2(); };
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeChange);
+new MutationObserver(themeChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+let rz = 0; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => tab === 1 ? drawAll1() : drawAll2()); }).observe(document.querySelector(".viz"));
+
+readColors();
+applyPreset1("res");
+setTab(1);
+requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
+
+// hook for testing
+window.scat = { P1, P2, solveE, geometry, spectrum, setupPacket, phaseShifts, sigmaExact, sigmaBorn, riccati, setup2, get T1() { return T1; }, get K1() { return K1; }, get T2() { return T2; }, get S2() { return S2; }, applyPreset1, setTab, update2 };
+})();
+</script>
+</body>
+</html>
