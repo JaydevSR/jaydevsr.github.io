@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rabi Oscillations and the Double Well</title>
+<meta name="description" content="Interactive companion to Tutorial 6: a driven spin solved exactly and with first-order time-dependent perturbation theory, and the quantum double well compared with a variational tight-binding ansatz.">
+<style>
+/* Same lab-instrument layout as the earlier tutorial pages: controls on the left,
+   live plots on the right, stacked on phones. Two tabs share the controls column. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #1a1d23;
+  --muted: #5b6270;
+  --rule: #d8dce4;
+  --pot: #4b505b;
+  --accent: #2b4c7e;
+  --osc: #2266c4;
+  --sep: #d4471c;
+  --rot: #129067;
+  --focus: #2b4c7e;
+  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-data: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+    --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+    --focus: #8fb0e6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #191c22; --fg: #e6e8ed; --muted: #9aa1ad; --rule: #2d323b;
+  --pot: #b3b8c2; --accent: #8fb0e6; --osc: #5b9bf0; --sep: #f2723f; --rot: #2fbf8c;
+  --focus: #8fb0e6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lead { margin: 2px 0 0; max-width: 72ch; color: var(--muted); }
+.m { font-family: var(--font-display); font-style: italic; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); overflow-x: auto; }
+.tabs button {
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--muted); background: none;
+  border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px; margin-bottom: -1px;
+  cursor: pointer; white-space: nowrap;
+}
+.tabs button:hover { color: var(--fg); }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+.app { display: grid; grid-template-columns: 17.5rem minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .viz { order: -1; } }
+
+.controls { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 16px; display: grid; gap: 16px; }
+.group { display: grid; gap: 10px; }
+.group[hidden] { display: none; }
+.group h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets button { display: grid; gap: 1px; text-align: left; }
+.presets button small { color: var(--muted); font-size: 11.5px; font-family: var(--font-data); }
+.presets .span2 { grid-column: 1 / -1; }
+.presets button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+button {
+  font: inherit; font-size: 14px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 7px; padding: 7px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { display: grid; gap: 2px; }
+.slider label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.slider output { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--fg); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; flex: none; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--fg); vertical-align: middle; }
+.swatch.dash { border-top-style: dashed; }
+.swatch.dot { border-top-style: dotted; }
+
+.viz { display: grid; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.toolbar[hidden] { display: none; }
+.toolbar .btns { display: flex; gap: 8px; }
+.toolbar .primary { background: var(--fg); color: var(--bg); border-color: var(--fg); min-width: 5.5em; }
+.readouts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; align-items: baseline; }
+.readouts .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.scrub { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; width: 100%; }
+
+.plots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.plots[hidden] { display: none; }
+@media (max-width: 680px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px 8px; display: grid; gap: 4px; min-width: 0; margin: 0; }
+.panel.wide { grid-column: 1 / -1; }
+.panel header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.panel h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.panel .key { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; }
+canvas { display: block; width: 100%; max-width: 100%; }
+.r43 { aspect-ratio: 4 / 3; }
+.r11 { aspect-ratio: 1 / 1; }
+.r_wide { aspect-ratio: 16 / 5.2; }
+@media (max-width: 680px) { .r_wide { aspect-ratio: 16 / 9; } }
+#cvBloch { cursor: grab; touch-action: none; }
+#cvLine, #cvSplit { cursor: crosshair; }
+
+table.lv { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.lv th, table.lv td { padding: 2px 8px; text-align: right; border-bottom: 1px solid var(--rule); }
+table.lv th { font-weight: 600; color: var(--muted); font-size: 12px; }
+table.lv td { font-family: var(--font-data); }
+.tablewrap { overflow-x: auto; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 22px; font-size: 14px; color: var(--muted); }
+.notes[hidden] { display: none; }
+.notes p { margin: 0; max-width: 62ch; }
+.notes strong { color: var(--fg); font-weight: 600; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+footer p { margin: 0 0 4px; max-width: 100ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Advanced Quantum Mechanics · Tutorial 6</p>
+    <h1>Rabi oscillations and the double well</h1>
+    <p class="lead">Two problems where the exact answer can be compared with an approximation. The first tab drives a spin with a rotating field and compares the Rabi formula with first-order time-dependent perturbation theory. The second tab diagonalizes the quartic double well numerically and compares it with the variational tight-binding ansatz built from two harmonic-oscillator ground states.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="plots1">Rabi</button>
+    <button type="button" role="tab" id="tab2" aria-selected="false" aria-controls="plots2" tabindex="-1">Double well</button>
+  </div>
+
+  <div class="app">
+    <aside class="controls" aria-label="Controls">
+      <!-- ============ tab 1 ============ -->
+      <section class="group" data-tab="1">
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the Rabi problem">
+          <button type="button" data-preset1="res" aria-pressed="true">Resonant<small>Δ = 0</small></button>
+          <button type="button" data-preset1="det1" aria-pressed="false">Detuned<small>Δ = Ω</small></button>
+          <button type="button" data-preset1="far" aria-pressed="false">Far detuned<small>Δ = 4Ω</small></button>
+          <button type="button" data-preset1="lin" aria-pressed="false">Linear, strong<small>Ω = 0.3 ω₀</small></button>
+        </div>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Drive</h2>
+        <div class="slider">
+          <label for="dd"><span>Detuning Δ/Ω</span><output id="ddv" for="dd"></output></label>
+          <input type="range" id="dd" min="-8" max="8" step="0.05" value="0">
+          <p class="hint">Δ = ω − ω<sub>0</sub>, Ω = 2ε/ħ; or click in the resonance plot</p>
+        </div>
+        <div class="slider">
+          <label for="win"><span>Time window</span><output id="winv" for="win"></output></label>
+          <input type="range" id="win" min="1" max="12" step="1" value="1">
+          <p class="hint">in resonant Rabi periods 2π/Ω</p>
+        </div>
+        <label class="check"><input type="checkbox" id="tdpt" checked><span>First-order TDPT</span></label>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Linear drive (extra)</h2>
+        <label class="check"><input type="checkbox" id="lin"><span>2ε cos(ω<span class="m">t</span>) σ<sub><span class="m">x</span></sub>, solved numerically</span></label>
+        <div class="slider">
+          <label for="ow"><span>Ω/ω<sub>0</sub></span><output id="owv" for="ow"></output></label>
+          <input type="range" id="ow" min="0" max="1" step="0.001" value="0.3">
+          <p class="hint">the rotating drive does not depend on ω<sub>0</sub>; the linear one does</p>
+        </div>
+      </section>
+      <section class="group" data-tab="1">
+        <h2>Playback</h2>
+        <div class="slider">
+          <label for="sp1">Speed<output id="sp1v" for="sp1"></output></label>
+          <input type="range" id="sp1" min="0" max="1" step="0.001" value="0.5">
+        </div>
+      </section>
+
+      <!-- ============ tab 2 ============ -->
+      <section class="group" data-tab="2" hidden>
+        <h2>Start from</h2>
+        <div class="presets" role="group" aria-label="Presets for the double well">
+          <button type="button" data-preset2="2" aria-pressed="false">Shallow<small>η = 2</small></button>
+          <button type="button" data-preset2="6" aria-pressed="true">Moderate<small>η = 6</small></button>
+          <button type="button" data-preset2="8" aria-pressed="false">Factor 10<small>η = 8</small></button>
+          <button type="button" data-preset2="16" aria-pressed="false">Deep<small>η = 16</small></button>
+        </div>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Double well</h2>
+        <p class="hint"><span class="m">V</span>(<span class="m">q</span>) = <span class="m">λ</span>(<span class="m">q</span>² − <span class="m">q</span><sub>0</sub>²)²/4, minima at ±<span class="m">q</span><sub>0</sub> (constant dropped)</p>
+        <div class="slider">
+          <label for="eta"><span><span class="m">η</span> = <span class="m">q</span><sub>0</sub>²/ℓ²</span><output id="etav" for="eta"></output></label>
+          <input type="range" id="eta" min="1" max="20" step="0.1" value="6">
+          <p class="hint" id="etaHint"></p>
+        </div>
+      </section>
+      <section class="group" data-tab="2" hidden>
+        <h2>Wave functions</h2>
+        <label class="check"><input type="radio" name="wf" id="wfLin" checked><span>ψ(<span class="m">q</span>), linear scale</span></label>
+        <label class="check"><input type="radio" name="wf" id="wfLog"><span>log<sub>10</sub>|ψ(<span class="m">q</span>)|, ground state only</span></label>
+        <label class="check"><input type="checkbox" id="wkb" checked><span>WKB decay under the barrier (log view)</span></label>
+      </section>
+    </aside>
+
+    <main class="viz">
+      <!-- tab 1 toolbar -->
+      <div class="toolbar" id="tb1">
+        <div class="btns">
+          <button type="button" class="primary" id="play1">Play</button>
+          <button type="button" id="restart1">Restart</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <span><span class="m">Ωt</span> = <span class="num" id="rT">0</span></span>
+          <span title="Exact Rabi formula"><span class="m">P</span> = <span class="num" id="rP">—</span></span>
+          <span title="First-order time-dependent perturbation theory" id="rP1w"><span class="m">P</span><sup>(1)</sup> = <span class="num" id="rP1">—</span> <span class="num" id="rRatio"></span></span>
+          <span id="rPlw" title="Numerical solution with the linear drive"><span class="m">P</span><sub>lin</sub> = <span class="num" id="rPl">—</span></span>
+          <span title="Generalized Rabi frequency"><span class="m">Ω<sub>R</sub></span> = <span class="num" id="rOR">—</span> Ω</span>
+        </div>
+        <div class="scrub">
+          <label for="tScrub1">time</label>
+          <input type="range" id="tScrub1" min="0" max="1" step="0.0001" value="0" aria-label="Time">
+        </div>
+      </div>
+      <!-- tab 2 toolbar -->
+      <div class="toolbar" id="tb2" hidden>
+        <div class="readouts" aria-live="off">
+          <span title="Barrier height">barrier = <span class="num" id="rVb">—</span> ħω</span>
+          <span title="Exact splitting of the two lowest levels">Δ<span class="m">E</span><sub>exact</sub> = <span class="num" id="rDE">—</span> ħω</span>
+          <span title="Splitting from the tight-binding ansatz">Δ<span class="m">E</span><sub>TB</sub> = <span class="num" id="rDT">—</span> ħω</span>
+          <span title="Exact over tight-binding splitting">ratio = <span class="num" id="rRat">—</span></span>
+        </div>
+      </div>
+
+      <!-- tab 1 plots -->
+      <div class="plots" id="plots1" role="tabpanel" aria-labelledby="tab1">
+        <figure class="panel">
+          <header><h3>Bloch sphere, rotating frame</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact (RWA)</span><span id="keyLinB"><span class="swatch" style="border-top-color:var(--sep)"></span> linear drive</span><span><span class="swatch dash" style="border-top-color:var(--rot)"></span> axis <span class="m">n</span></span><span>drag to turn</span></div></header>
+          <canvas id="cvBloch" class="r11" tabindex="0" role="img" aria-label="Bloch sphere in the frame rotating with the drive, with the trajectory of the spin and the rotation axis"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Transition probability</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact</span><span id="keyTd"><span class="swatch dash"></span> first-order TDPT</span><span id="keyLinP"><span class="swatch" style="border-top-color:var(--sep)"></span> linear drive</span></div></header>
+          <canvas id="cvP" class="r11" role="img" aria-label="Probability to find the spin in the excited state against time, exact and first-order perturbation theory"></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Resonance line</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> <span class="m">P</span>(<span class="m">t</span>) at the current time</span><span><span class="swatch dash"></span> <span class="m">P</span><sup>(1)</sup>(<span class="m">t</span>)</span><span><span class="swatch dot" style="border-top-color:var(--osc)"></span> maximum Ω²/(Ω²+Δ²)</span><span><span class="swatch dot"></span> TDPT maximum Ω²/Δ²</span><span>click to choose Δ</span></div></header>
+          <canvas id="cvLine" class="r_wide" tabindex="0" role="img" aria-label="Transition probability against detuning at the current time, exact and first-order perturbation theory. Click to choose the detuning."></canvas>
+        </figure>
+      </div>
+
+      <!-- tab 2 plots -->
+      <div class="plots" id="plots2" role="tabpanel" aria-labelledby="tab2" hidden>
+        <figure class="panel wide">
+          <header><h3>Potential and levels</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact, even</span><span><span class="swatch" style="border-top-color:var(--sep)"></span> exact, odd</span><span><span class="swatch dash"></span> tight-binding <span class="m">E</span><sub>±</sub></span><span><span class="swatch dot"></span> ħω(<span class="m">n</span>+½) of one well</span></div></header>
+          <canvas id="cvLev" class="r_wide" role="img" aria-label="Double-well potential with the exact energy levels and the two tight-binding energies"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3 id="wfTitle">Two lowest states</h3><div class="key" id="wfKey"></div></header>
+          <canvas id="cvWf" class="r43" role="img" aria-label="Wave functions of the two lowest states, exact and tight-binding"></canvas>
+        </figure>
+        <figure class="panel">
+          <header><h3>Tunnel splitting</h3><div class="key"><span><span class="swatch" style="border-top-color:var(--osc)"></span> exact</span><span><span class="swatch dash"></span> tight-binding</span><span><span class="swatch dot" style="border-top-color:var(--sep)"></span> 4(η/π)<sup>½</sup> e<sup>−2η/3</sup></span><span>click to choose η</span></div></header>
+          <canvas id="cvSplit" class="r43" tabindex="0" role="img" aria-label="Splitting of the two lowest levels against eta on a logarithmic scale, exact, tight-binding and asymptotic. Click to choose eta."></canvas>
+        </figure>
+        <figure class="panel wide">
+          <header><h3>Lowest levels</h3><div class="key"><span>energies in units of ħω above the bottom of the wells</span></div></header>
+          <div class="tablewrap"><table class="lv" id="lvTable"></table></div>
+        </figure>
+      </div>
+    </main>
+  </div>
+
+  <section class="notes" id="notes1" aria-label="How to read the Rabi view">
+    <p><strong>Rotating frame.</strong> In the frame that rotates with the drive, the Hamiltonian is static, <span class="m">H</span><sub>rot</sub> = −½ħΔσ<sub><span class="m">z</span></sub> + εσ<sub><span class="m">x</span></sub> = ½ħΩ<sub><span class="m">R</span></sub> <span class="m">n</span>·σ. The Bloch vector starts at the south pole |<span class="m">g</span>⟩ and precesses about <span class="m">n</span> at the frequency Ω<sub><span class="m">R</span></sub>. On resonance <span class="m">n</span> lies along <span class="m">x</span> and the spin reaches |<span class="m">e</span>⟩.</p>
+    <p><strong>Perturbation theory.</strong> <span class="m">P</span><sup>(1)</sup> = (Ω/Δ)² sin²(Δ<span class="m">t</span>/2) grows as (Ω<span class="m">t</span>/2)² on resonance and exceeds 1. Far from resonance it has the right amplitude but the wrong frequency, |Δ| instead of Ω<sub><span class="m">R</span></sub>, so it drifts out of phase after a time of order |Δ|/Ω².</p>
+    <p><strong>Linear drive.</strong> An oscillating field is a co-rotating plus a counter-rotating field. When Ω is not small compared with ω<sub>0</sub>, the counter-rotating part adds fast wiggles and shifts the resonance (Bloch–Siegert shift): the rotating-wave approximation fails.</p>
+  </section>
+  <section class="notes" id="notes2" aria-label="How to read the double-well view" hidden>
+    <p><strong>Tight binding.</strong> The ansatz α<sub><span class="m">L</span></sub>ψ<sub><span class="m">L</span></sub> + α<sub><span class="m">R</span></sub>ψ<sub><span class="m">R</span></sub> gives the even ground state ψ<sub>+</sub> and the odd state ψ<sub>−</sub>. Both energies are upper bounds for the exact ones, and both approach ħω/2 as η grows.</p>
+    <p><strong>Splitting.</strong> The tight-binding splitting falls as η<span class="m">e</span><sup>−η</sup>, the exact one as <span class="m">e</span><sup>−2η/3</sup>. The Gaussian tails of ψ<sub><span class="m">L,R</span></sub> decay too fast under the barrier; the log view shows where.</p>
+    <p><strong>Doublets.</strong> Each level of a single well becomes an even–odd pair. Higher pairs sit closer to the top of the barrier, see a thinner barrier, and are split more. Above the barrier the levels no longer pair up.</p>
+  </section>
+
+  <footer>
+    <p>Rabi tab: units ħ = 1, time in units of 1/Ω. The rotating drive is solved exactly (Rabi formula); the linear drive is integrated numerically in the interaction picture (fourth-order Runge–Kutta, at least 40 steps per period of ω + ω<sub>0</sub>). The Bloch vector is shown in the frame rotating at the drive frequency ω.</p>
+    <p>Double-well tab: units ħ = <span class="m">m</span> = ω = 1, so ℓ = 1, <span class="m">λ</span> = 1/(2η) and the barrier height is η/8. Exact levels by finite differences on the half line, separately for even and odd states, with <span id="rNx">—</span> grid points; eigenvalues by Sturm bisection, eigenvectors by inverse iteration. Tight-binding energies from the closed formulas of the sheet (item 8).</p>
+  </footer>
+</div>
+<script>
+(() => {
+"use strict";
+const TAU = 2 * Math.PI, PI = Math.PI;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ======================= shared drawing helpers ======================= */
+let C = {}, BODYFONT = "sans-serif";
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = { fg: g("--fg"), muted: g("--muted"), rule: g("--rule"), pot: g("--pot"), surface: g("--surface"),
+        osc: g("--osc"), sep: g("--sep"), rot: g("--rot"), accent: g("--accent") };
+  BODYFONT = getComputedStyle(document.body).fontFamily;
+}
+function hexToRgb(h) { const m = h.replace("#", ""); const v = parseInt(m.length === 3 ? m.split("").map(c => c + c).join("") : m, 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+function rgba(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+const FONT = s => `${s}px ${BODYFONT}`;
+const MFONT = s => `italic ${s}px "Iowan Old Style", Charter, Cambria, Georgia, serif`;
+function prepCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, r.width, r.height);
+  return { ctx, w: r.width, h: r.height };
+}
+function richSegs(lab, italic) { return typeof lab === "string" ? [[lab, 0, italic ? 1 : 0]] : lab; }
+function drawRich(ctx, segs, x, y, size, align) {
+  const fontOf = sg => (sg[2] ? MFONT : FONT)(sg[1] ? Math.round(size * 0.74) : size);
+  let wsum = 0; for (const sg of segs) { ctx.font = fontOf(sg); wsum += ctx.measureText(sg[0]).width; }
+  let cx = align === "center" ? x - wsum / 2 : (align === "right" ? x - wsum : x);
+  const ta = ctx.textAlign; ctx.textAlign = "left";
+  for (const sg of segs) { ctx.font = fontOf(sg); ctx.fillText(sg[0], cx, y + (sg[1] ? size * 0.28 : 0)); cx += ctx.measureText(sg[0]).width; }
+  ctx.textAlign = ta;
+}
+function frame(ctx, box, xr, yr, xt, yt, xlab, ylab) {
+  const X = v => box.l + (v - xr[0]) / (xr[1] - xr[0]) * box.w;
+  const Y = v => box.t + (1 - (v - yr[0]) / (yr[1] - yr[0])) * box.h;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(box.l, box.t); ctx.lineTo(box.l, box.t + box.h); ctx.lineTo(box.l + box.w, box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const [v, s] of xt) { const x = X(v); ctx.beginPath(); ctx.moveTo(x, box.t + box.h); ctx.lineTo(x, box.t + box.h + 4); ctx.stroke(); ctx.fillText(s, x, box.t + box.h + 6); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const [v, s] of yt) { const y = Y(v); ctx.beginPath(); ctx.moveTo(box.l - 4, y); ctx.lineTo(box.l, y); ctx.stroke(); ctx.fillText(s, box.l - 6, y); }
+  ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  if (xlab) drawRich(ctx, richSegs(xlab, true), box.l + box.w / 2, box.t + box.h + 36, 13, "center");
+  if (ylab) {
+    ctx.save(); ctx.translate(13, box.t + box.h / 2); ctx.rotate(-PI / 2); ctx.textBaseline = "middle";
+    drawRich(ctx, richSegs(ylab, false), 0, 0, 12, "center"); ctx.restore();
+  }
+  return { X, Y };
+}
+function numLabel(v) { const s = Math.abs(v) < 1e-9 ? "0" : String(+v.toFixed(2)); return v < 0 ? "−" + s.slice(1) : s; }
+function ticks(lo, hi, step) { const t = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) t.push([v, numLabel(v)]); return t; }
+function niceStep(span, n) { const raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+const SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+const pow10 = e => e === 0 ? "1" : (e === 1 ? "10" : "10" + String(e).split("").map(c => SUP[c]).join(""));
+function logTicks(lo, hi, maxN) {
+  const a = Math.ceil(lo - 1e-9), b = Math.floor(hi + 1e-9), n = b - a + 1, st = Math.max(1, Math.ceil(n / maxN)), t = [];
+  for (let e = a; e <= b; e++) if ((e - a) % st === 0) t.push([e, pow10(e)]);
+  return t;
+}
+function fmtSig(v, s) {
+  if (!isFinite(v)) return "—";
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 1e-3 || a >= 1e5)) { const e = Math.floor(Math.log10(a)), m = v / Math.pow(10, e); return `${m.toFixed(s - 1)}×10${String(e).split("").map(c => SUP[c]).join("")}`.replace("-", "−"); }
+  return (v < 0 ? "−" : "") + a.toPrecision(s);
+}
+function fmt(v, d) { if (!isFinite(v)) return "—"; return (v < 0 ? "−" : "") + Math.abs(v).toFixed(d); }
+function polyline(ctx, pts) { ctx.beginPath(); let on = false; for (const p of pts) { if (!p) { on = false; continue; } on ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); on = true; } ctx.stroke(); }
+
+/* ======================= TAB 1: Rabi ======================= */
+// units hbar = 1, Omega = 2 eps / hbar = 1, time in units of 1/Omega
+const P1 = { D: 0, win: 1, tdpt: true, lin: false, ow: 0.05, speed: 1, t: 0 };
+const PRE1 = {
+  res:  { D: 0, win: 1, lin: false },
+  det1: { D: 1, win: 3, lin: false },
+  far:  { D: 4, win: 6, lin: false },
+  lin:  { D: 0, win: 3, lin: true, ow: 0.3 },
+};
+const owFromU = u => 0.005 * Math.pow(100, u), uFromOw = o => Math.log(o / 0.005) / Math.log(100);
+const tMax = () => TAU * P1.win;
+const OmR = D => Math.sqrt(1 + D * D);
+const Pex = (D, t) => { const r = OmR(D); return Math.pow(Math.sin(0.5 * r * t) / r, 2); };
+const Ptd = (D, t) => Math.abs(D) < 1e-9 ? 0.25 * t * t : Math.pow(Math.sin(0.5 * D * t) / D, 2);
+// Bloch vector in the rotating frame: precession about n = (1, 0, -D)/OmR, starting at the south pole
+function blochExact(D, t, out) {
+  const r = OmR(D), nx = 1 / r, nz = -D / r, th = r * t, c = Math.cos(th), s = Math.sin(th);
+  // S0 = (0,0,-1): n x S0 = (0, nx, 0); n.S0 = -nz
+  out[0] = -nz * nx * (1 - c);
+  out[1] = nx * s;
+  out[2] = -c - nz * nz * (1 - c);
+  return out;
+}
+// linear drive 2 eps cos(w t) sigma_x, interaction picture, RK4
+let LIN = null;
+function solveLinear() {
+  const w0 = 1 / P1.ow, w = w0 + P1.D, T = tMax();
+  const dt = Math.min(0.02, TAU / ((Math.abs(w) + w0) * 40));
+  const nSteps = Math.ceil(T / dt), h = T / nSteps, Ns = 1500;
+  const P = new Float64Array(Ns), B = new Float64Array(3 * Ns);
+  // state c = (ce, cg) complex: [er, ei, gr, gi]
+  let y = [0, 0, 1, 0];
+  const f = (t, y) => {
+    const k = Math.cos(w * t), c = Math.cos(w0 * t), s = Math.sin(w0 * t);
+    // dce = -i k e^{i w0 t} cg ; dcg = -i k e^{-i w0 t} ce
+    const ar = k * (c * y[2] - s * y[3]), ai = k * (c * y[3] + s * y[2]);      // k e^{iw0t} cg
+    const br = k * (c * y[0] + s * y[1]), bi = k * (c * y[1] - s * y[0]);      // k e^{-iw0t} ce
+    return [ai, -ar, bi, -br];
+  };
+  const store = (j, t, y) => {
+    // rotating frame: phi_e = e^{iDt/2} ce, phi_g = e^{-iDt/2} cg
+    const ph = 0.5 * P1.D * t, c = Math.cos(ph), s = Math.sin(ph);
+    const er = c * y[0] - s * y[1], ei = c * y[1] + s * y[0];
+    const gr = c * y[2] + s * y[3], gi = c * y[3] - s * y[2];
+    const nrm = er * er + ei * ei + gr * gr + gi * gi;
+    P[j] = (er * er + ei * ei) / nrm;
+    // a* b with a = phi_e, b = phi_g
+    const xr = er * gr + ei * gi, xi = er * gi - ei * gr;
+    B[3 * j] = 2 * xr / nrm; B[3 * j + 1] = 2 * xi / nrm; B[3 * j + 2] = (er * er + ei * ei - gr * gr - gi * gi) / nrm;
+  };
+  store(0, 0, y);
+  let t = 0, next = 1;
+  for (let n = 0; n < nSteps; n++) {
+    const k1 = f(t, y);
+    const y2 = y.map((v, i) => v + 0.5 * h * k1[i]), k2 = f(t + 0.5 * h, y2);
+    const y3 = y.map((v, i) => v + 0.5 * h * k2[i]), k3 = f(t + 0.5 * h, y3);
+    const y4 = y.map((v, i) => v + h * k3[i]), k4 = f(t + h, y4);
+    y = y.map((v, i) => v + h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+    t += h;
+    while (next < Ns && next / (Ns - 1) * T <= t + 1e-12) { store(next, t, y); next++; }
+  }
+  while (next < Ns) { store(next, T, y); next++; }
+  LIN = { P, B, Ns, T, key: linKey() };
+}
+const linKey = () => `${P1.D}|${P1.ow}|${P1.win}`;
+function linAt(t) {
+  if (!LIN) return null;
+  const u = clamp(t / LIN.T, 0, 1) * (LIN.Ns - 1), i = Math.min(LIN.Ns - 2, Math.floor(u)), f = u - i;
+  return { P: LIN.P[i] * (1 - f) + LIN.P[i + 1] * f, B: [0, 1, 2].map(k => LIN.B[3 * i + k] * (1 - f) + LIN.B[3 * (i + 1) + k] * f) };
+}
+function ensureLin() { if (P1.lin && (!LIN || LIN.key !== linKey())) solveLinear(); }
+
+/* ---------- drawing, tab 1 ---------- */
+const view = { az: 0.55, el: 0.32 };
+function proj(p, cx, cy, R) {
+  const ca = Math.cos(view.az), sa = Math.sin(view.az), ce = Math.cos(view.el), se = Math.sin(view.el);
+  const u = -p[0] * sa + p[1] * ca;
+  const v = -p[0] * se * ca - p[1] * se * sa + p[2] * ce;
+  const d = p[0] * ce * ca + p[1] * ce * sa + p[2] * se;
+  return [cx + R * u, cy - R * v, d];
+}
+function drawBloch() {
+  const { ctx, w, h } = prepCanvas($("cvBloch"));
+  const R = Math.min(w, h) * 0.36, cx = w / 2, cy = h / 2 + 4;
+  const P = p => proj(p, cx, cy, R);
+  // sphere
+  ctx.fillStyle = rgba(C.osc, 0.04); ctx.strokeStyle = C.rule; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.stroke();
+  // great circles: equator, xz and yz meridians, front solid, back dashed
+  const circle = (fn) => {
+    for (const front of [false, true]) {
+      ctx.strokeStyle = front ? C.rule : rgba(C.muted, 0.25); ctx.setLineDash(front ? [] : [3, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); let on = false;
+      for (let i = 0; i <= 120; i++) { const q = P(fn(TAU * i / 120)); if ((q[2] >= 0) === front) { on ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); on = true; } else on = false; }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  };
+  circle(a => [Math.cos(a), Math.sin(a), 0]);
+  circle(a => [Math.sin(a), 0, Math.cos(a)]);
+  circle(a => [0, Math.sin(a), Math.cos(a)]);
+  // axes
+  ctx.lineWidth = 1; ctx.strokeStyle = rgba(C.muted, 0.6);
+  const labs = [[[1, 0, 0], "x"], [[0, 1, 0], "y"], [[0, 0, 1], "z"]];
+  for (const [e] of labs) { const a = P(e.map(v => -v)), b = P(e); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const [e, s] of labs) { const q = P(e.map(v => (s === "z" ? 1.3 : 1.16) * v)); drawRich(ctx, [[s, 0, 1]], q[0], q[1], 13, "center"); }
+  const N = P([0, 0, 1.0]), S = P([0, 0, -1.0]);
+  ctx.fillStyle = C.fg; ctx.font = FONT(12); ctx.textAlign = "left";
+  ctx.fillText("|e⟩", N[0] + 7, N[1] + 2); ctx.fillText("|g⟩", S[0] + 7, S[1] + 12);
+  // rotation axis n
+  const r = OmR(P1.D), n = [1 / r, 0, -P1.D / r];
+  const na = P(n.map(v => -1.25 * v)), nb = P(n.map(v => 1.25 * v));
+  ctx.strokeStyle = C.rot; ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(na[0], na[1]); ctx.lineTo(nb[0], nb[1]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = C.rot; drawRich(ctx, [["n", 0, 1]], nb[0] + 6, nb[1] - 6, 14, "left");
+  // trajectories
+  const traj = (getB, col, lw) => {
+    const M = 600, t = P1.t;
+    for (const front of [false, true]) {
+      ctx.strokeStyle = front ? col : rgba(col, 0.3); ctx.lineWidth = lw; ctx.beginPath(); let on = false;
+      for (let i = 0; i <= M; i++) { const q = P(getB(t * i / M)); if ((q[2] >= -0.02) === front) { on ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); on = true; } else on = false; }
+      ctx.stroke();
+    }
+  };
+  const tmp = [0, 0, 0];
+  if (P1.lin && LIN) traj(t => linAt(t).B, C.sep, 1.3);
+  traj(t => blochExact(P1.D, t, tmp).slice(), C.osc, 2);
+  // current vectors
+  const arrow = (b, col) => {
+    const o = P([0, 0, 0]), q = P(b);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], 4.5, 0, TAU); ctx.fill();
+  };
+  if (P1.lin && LIN) arrow(linAt(P1.t).B, C.sep);
+  arrow(blochExact(P1.D, P1.t, tmp).slice(), C.osc);
+}
+function drawP() {
+  const { ctx, w, h } = prepCanvas($("cvP"));
+  const box = { l: 48, t: 18, w: w - 60, h: h - 60 }, T = tMax();
+  const st = niceStep(T, 6), D2 = P1.D * P1.D;
+  const ytop = Math.min(1.05, 1.3 * Math.max(1 / (1 + D2), P1.tdpt && D2 > 0 ? 1 / D2 : 0, P1.lin ? 0.5 : 0));
+  const { X, Y } = frame(ctx, box, [0, T], [0, ytop], ticks(0, T, st), ticks(0, ytop, niceStep(ytop, 4)), [["Ω", 0, 0], ["t", 0, 1]], [["P", 0, 1], ["g→e", 1, 0]]);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 1, box.w + 2, box.h + 2); ctx.clip();
+  const cols = Math.floor(box.w), curve = (fn, col, lw, dash) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+    const pts = []; for (let c = 0; c <= cols; c++) { const t = T * c / cols; pts.push([X(t), Y(Math.min(fn(t), 1.2 * ytop))]); }
+    polyline(ctx, pts); ctx.setLineDash([]);
+  };
+  // envelope of the exact result
+  const r = OmR(P1.D), pm = 1 / (r * r);
+  ctx.strokeStyle = C.rule; ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(box.l, Y(pm)); ctx.lineTo(box.l + box.w, Y(pm)); ctx.stroke(); ctx.setLineDash([]);
+  if (P1.lin && LIN) curve(t => linAt(t).P, C.sep, 1.3);
+  curve(t => Pex(P1.D, t), C.osc, 2);
+  if (P1.tdpt) curve(t => Ptd(P1.D, t), C.fg, 1.4, [5, 4]);
+  ctx.strokeStyle = C.fg; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(X(P1.t), box.t); ctx.lineTo(X(P1.t), box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.osc; ctx.beginPath(); ctx.arc(X(P1.t), Y(Pex(P1.D, P1.t)), 3.6, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "right"; ctx.textBaseline = "top";
+  ctx.fillText(`dotted: Ω²/(Ω²+Δ²) = ${pm.toFixed(3)}`, box.l + box.w - 2, box.t - 8);
+}
+let lineBox = null;
+function drawLine() {
+  const { ctx, w, h } = prepCanvas($("cvLine"));
+  const box = { l: 44, t: 10, w: w - 56, h: h - 50 }; lineBox = box;
+  const xr = [-8, 8], t = P1.t;
+  const { X, Y } = frame(ctx, box, xr, [0, 1.05], ticks(-8, 8, 1), ticks(0, 1, 0.5), [["Δ / Ω", 0, 0]], [["P", 0, 1]]);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t - 1, box.w + 2, box.h + 2); ctx.clip();
+  const M = Math.floor(box.w), curve = (fn, col, lw, dash) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+    const pts = []; for (let i = 0; i <= M; i++) { const d = xr[0] + (xr[1] - xr[0]) * i / M; pts.push([X(d), Y(Math.min(fn(d), 1.2))]); }
+    polyline(ctx, pts); ctx.setLineDash([]);
+  };
+  curve(d => 1 / (1 + d * d), C.osc, 1.2, [2, 3]);
+  if (P1.tdpt) curve(d => 1 / Math.max(d * d, 1e-6), C.muted, 1.1, [2, 3]);
+  curve(d => Pex(d, t), C.osc, 2);
+  if (P1.tdpt) curve(d => Ptd(d, t), C.fg, 1.4, [5, 4]);
+  ctx.strokeStyle = C.sep; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(P1.D), box.t); ctx.lineTo(X(P1.D), box.t + box.h); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillText(`Ωt = ${t.toFixed(2)}`, box.l + 6, box.t + 2);
+  ctx.textAlign = "right"; ctx.fillText("width: ~2π/t for TDPT, ~Ω exact (power broadening)", box.l + box.w - 4, box.t + 2);
+}
+function readouts1() {
+  const t = P1.t, pe = Pex(P1.D, t), pt = Ptd(P1.D, t);
+  $("rT").textContent = t.toFixed(2);
+  $("rP").textContent = pe.toFixed(4);
+  $("rP1w").hidden = !P1.tdpt;
+  $("rP1").textContent = pt.toFixed(4);
+  $("rRatio").textContent = pe > 1e-4 ? `(${pt / pe >= 1 ? "+" : "−"}${Math.abs(100 * (pt / pe - 1)).toFixed(1)}%)` : "";
+  $("rPlw").hidden = !(P1.lin && LIN);
+  if (P1.lin && LIN) $("rPl").textContent = linAt(t).P.toFixed(4);
+  $("rOR").textContent = OmR(P1.D).toFixed(4);
+  if (document.activeElement !== $("tScrub1")) $("tScrub1").value = t / tMax();
+}
+function drawAll1() { ensureLin(); drawBloch(); drawP(); drawLine(); readouts1(); }
+
+/* ======================= TAB 2: double well ======================= */
+// units hbar = m = omega = 1, ell = 1; V(q) = (q^2 - eta)^2 / (8 eta), minimum 0 at q = ±sqrt(eta)
+const P2 = { eta: 6, log: false, wkb: true };
+const NX = 2400, NLEV = 5;
+const Vdw = (q, eta) => { const a = q * q - eta; return a * a / (8 * eta); };
+function tridiag(eta, N, parity) {
+  const q0 = Math.sqrt(eta), L = q0 + 9, h = L / N, d = new Float64Array(N), x = new Float64Array(N);
+  const e = -0.5 / (h * h);
+  for (let i = 0; i < N; i++) { x[i] = (i + 0.5) * h; d[i] = 1 / (h * h) + Vdw(x[i], eta); }
+  d[0] += parity > 0 ? e : -e;           // even: psi(-h/2) = psi(h/2); odd: = -psi(h/2)
+  return { d, e, x, h, N };
+}
+function sturm(T, lam) {        // number of eigenvalues below lam
+  const { d, e, N } = T, e2 = e * e; let q = d[0] - lam, c = q < 0 ? 1 : 0;
+  for (let i = 1; i < N; i++) { if (q === 0) q = 1e-300; q = d[i] - lam - e2 / q; if (q < 0) c++; }
+  return c;
+}
+function eigval(T, k, hi) {
+  let lo = 0; hi = hi || 50;
+  while (sturm(T, hi) <= k) hi *= 2;
+  for (let it = 0; it < 64; it++) { const mid = 0.5 * (lo + hi); if (sturm(T, mid) > k) hi = mid; else lo = mid; }
+  return 0.5 * (lo + hi);
+}
+function eigvec(T, lam) {
+  const { d, e, N } = T, sh = lam - 1e-11 * Math.max(1, lam);
+  let v = new Float64Array(N).fill(1);
+  const cp = new Float64Array(N), dp = new Float64Array(N);
+  for (let it = 0; it < 4; it++) {
+    // Thomas algorithm for (T - sh) y = v
+    let b = d[0] - sh; cp[0] = e / b; dp[0] = v[0] / b;
+    for (let i = 1; i < N; i++) { b = d[i] - sh - e * cp[i - 1]; if (b === 0) b = 1e-300; cp[i] = e / b; dp[i] = (v[i] - e * dp[i - 1]) / b; }
+    const y = new Float64Array(N); y[N - 1] = dp[N - 1];
+    for (let i = N - 2; i >= 0; i--) y[i] = dp[i] - cp[i] * y[i + 1];
+    let s = 0; for (let i = 0; i < N; i++) s += y[i] * y[i];
+    s = Math.sqrt(2 * T.h * s);                 // normalize on the full line
+    for (let i = 0; i < N; i++) y[i] /= s;
+    v = y;
+  }
+  // sign: positive in the right well
+  let im = 0; for (let i = 0; i < N; i++) if (Math.abs(v[i]) > Math.abs(v[im])) im = i;
+  if (v[im] < 0) for (let i = 0; i < N; i++) v[i] = -v[i];
+  return v;
+}
+function exactSplit(eta, N) { return eigval(tridiag(eta, N, -1), 0) - eigval(tridiag(eta, N, 1), 0); }
+function tb(eta) {
+  const S = Math.exp(-eta), HLL = 0.5 + 3 / (32 * eta), HLR = S * HLL - 0.375 * (1 + eta) * S;
+  return { S, HLL, HLR, Ep: (HLL + HLR) / (1 + S), Em: (HLL - HLR) / (1 - S) };
+}
+const asym = eta => 4 * Math.sqrt(eta / PI) * Math.exp(-2 * eta / 3);
+let DW = null, SPL = null;
+function setupDW() {
+  const eta = P2.eta, Te = tridiag(eta, NX, 1), To = tridiag(eta, NX, -1);
+  const Ee = [], Eo = [];
+  for (let k = 0; k < NLEV; k++) { Ee.push(eigval(Te, k)); Eo.push(eigval(To, k)); }
+  const v0 = eigvec(Te, Ee[0]), v1 = eigvec(To, Eo[0]);
+  DW = { eta, q0: Math.sqrt(eta), Ee, Eo, v0, v1, x: Te.x, h: Te.h, tb: tb(eta) };
+}
+function setupSplit() {
+  const es = [], ex = [];
+  for (let eta = 1; eta <= 20.0001; eta += 0.5) { es.push(eta); ex.push(exactSplit(eta, 1200)); }
+  SPL = { es, ex };
+}
+// full-line wave function from half-line data
+function psiFull(v, x, h, q, parity) {
+  const a = Math.abs(q), u = a / h - 0.5;
+  let val;
+  if (u <= 0) val = v[0]; else { const i = Math.floor(u); if (i >= v.length - 1) return 0; const f = u - i; val = v[i] * (1 - f) + v[i + 1] * f; }
+  return q < 0 && parity < 0 ? -val : val;
+}
+const gauss = (q, c) => Math.pow(PI, -0.25) * Math.exp(-0.5 * (q - c) * (q - c));
+
+/* ---------- drawing, tab 2 ---------- */
+function drawLev() {
+  const { ctx, w, h } = prepCanvas($("cvLev"));
+  const box = { l: 44, t: 10, w: w - 56, h: h - 50 }, { eta, q0, Ee, Eo, tb: T } = DW;
+  const Vb = eta / 8, ytop = Math.max(Vb * 1.3, Math.min(Eo[2] * 1.08, 4.2), 2.2);
+  const xm = q0 + Math.max(2.2, Math.sqrt(2 * Math.sqrt(8 * eta * ytop)) - q0 + 0.3);
+  const xr = [-Math.min(xm, q0 + 4), Math.min(xm, q0 + 4)];
+  const { X, Y } = frame(ctx, box, xr, [0, ytop], ticks(xr[0], xr[1], niceStep(xr[1] - xr[0], 8)), ticks(0, ytop, niceStep(ytop, 4)), [["q", 0, 1], [" / ℓ", 0, 0]], [["E / ħω", 0, 0]]);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  // potential
+  const M = Math.floor(box.w), pts = [];
+  for (let i = 0; i <= M; i++) { const q = xr[0] + (xr[1] - xr[0]) * i / M; pts.push([X(q), Y(Vdw(q, eta))]); }
+  ctx.fillStyle = rgba(C.pot, 0.08); ctx.beginPath(); ctx.moveTo(X(xr[0]), box.t);
+  for (const p of pts) ctx.lineTo(p[0], Math.max(p[1], box.t)); ctx.lineTo(X(xr[1]), box.t); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C.pot; ctx.lineWidth = 1.6; polyline(ctx, pts);
+  // harmonic levels of one well (dotted, near each minimum)
+  ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([1.5, 3]);
+  for (let n = 0; n < 6; n++) { const E = n + 0.5; if (E > ytop) break; const a = Math.sqrt(2 * E) + 0.25;
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(X(s * q0 - a), Y(E)); ctx.lineTo(X(s * q0 + a), Y(E)); ctx.stroke(); } }
+  ctx.setLineDash([]);
+  // exact levels across the classically allowed region
+  const allowed = E => { const segs = []; let inside = false, s0 = 0; for (let i = 0; i <= M; i++) { const q = xr[0] + (xr[1] - xr[0]) * i / M, a = Vdw(q, eta) <= E; if (a && !inside) { s0 = q; inside = true; } if ((!a || i === M) && inside) { segs.push([s0, q]); inside = false; } } return segs; };
+  const level = (E, col, lw, dash, dy) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); for (const [a, b] of allowed(E)) { ctx.beginPath(); ctx.moveTo(X(a), Y(E) + (dy || 0)); ctx.lineTo(X(b), Y(E) + (dy || 0)); ctx.stroke(); } ctx.setLineDash([]); };
+  for (let k = 0; k < NLEV; k++) { if (Ee[k] < ytop) level(Ee[k], C.osc, 1.8); if (Eo[k] < ytop) level(Eo[k], C.sep, 1.8); }
+  level(T.Ep, C.fg, 1.2, [5, 4], -3); level(T.Em, C.fg, 1.2, [5, 4], 3);
+  ctx.restore();
+  // barrier label
+  ctx.fillStyle = C.muted; ctx.font = FONT(11); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.textBaseline = "top"; if (Vb < ytop * 0.97 && Y(0) - Y(Vb) > 30) ctx.fillText(`barrier η/8 = ${Vb.toFixed(2)}`, X(0), Y(Vb) + 6);
+}
+function drawWf() {
+  const { ctx, w, h } = prepCanvas($("cvWf"));
+  const box = { l: 48, t: 10, w: w - 60, h: h - 52 }, { eta, q0, v0, v1, x, h: dx, tb: T } = DW;
+  const xr = [-(q0 + 3.2), q0 + 3.2], M = Math.floor(box.w);
+  const nP = 1 / Math.sqrt(2 * (1 + T.S)), nM = 1 / Math.sqrt(2 * (1 - T.S));
+  const tbP = q => nP * (gauss(q, -q0) + gauss(q, q0)), tbM = q => nM * (gauss(q, q0) - gauss(q, -q0));
+  ctx.save();
+  if (!P2.log) {
+    const top = 0.85;
+    const { X, Y } = frame(ctx, box, xr, [-top, top], ticks(xr[0], xr[1], niceStep(xr[1] - xr[0], 6)), ticks(-0.8, 0.8, 0.4), [["q", 0, 1], [" / ℓ", 0, 0]], [["ψ", 0, 1], [" ℓ", 0, 0], ["½", 1, 0]]);
+    ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+    ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(box.l, Y(0)); ctx.lineTo(box.l + box.w, Y(0)); ctx.stroke();
+    const curve = (fn, col, lw, dash) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); const pts = []; for (let i = 0; i <= M; i++) { const q = xr[0] + (xr[1] - xr[0]) * i / M; pts.push([X(q), Y(fn(q))]); } polyline(ctx, pts); ctx.setLineDash([]); };
+    curve(q => psiFull(v0, x, dx, q, 1), C.osc, 2.2);
+    curve(q => psiFull(v1, x, dx, q, -1), C.sep, 2.2);
+    curve(tbP, C.fg, 1.3, [5, 4]); curve(tbM, C.fg, 1.3, [2, 3]);
+    $("wfTitle").textContent = "Two lowest states";
+    $("wfKey").innerHTML = `<span><span class="swatch" style="border-top-color:var(--osc)"></span> ψ<sub>0</sub> exact</span><span><span class="swatch" style="border-top-color:var(--sep)"></span> ψ<sub>1</sub> exact</span><span><span class="swatch dash"></span> ψ<sub>+</sub> TB</span><span><span class="swatch dot"></span> ψ<sub>−</sub> TB</span>`;
+  } else {
+    const lo = Math.min(-2, Math.floor(Math.log10(Math.max(1e-16, tbP(0))) - 1)), hi = 0.3;
+    const { X, Y } = frame(ctx, box, xr, [lo, hi], ticks(xr[0], xr[1], niceStep(xr[1] - xr[0], 6)), logTicks(lo, 0, 6), [["q", 0, 1], [" / ℓ", 0, 0]], [["|ψ|", 0, 0], [" ℓ", 0, 0], ["½", 1, 0]]);
+    ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+    const curve = (fn, col, lw, dash, qa, qb) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); const pts = []; const a = qa === undefined ? xr[0] : qa, b = qb === undefined ? xr[1] : qb; for (let i = 0; i <= M; i++) { const q = a + (b - a) * i / M, v = Math.abs(fn(q)); pts.push(v > 0 ? [X(q), Y(Math.log10(v))] : null); } polyline(ctx, pts); ctx.setLineDash([]); };
+    // turning points of the ground-state energy
+    const E0 = DW.Ee[0], qt = Math.sqrt(Math.max(0, eta - Math.sqrt(8 * eta * E0)));
+    ctx.fillStyle = rgba(C.pot, 0.07); ctx.fillRect(X(-qt), box.t, X(qt) - X(-qt), box.h);
+    curve(q => psiFull(v0, x, dx, q, 1), C.osc, 2.2);
+    curve(tbP, C.fg, 1.3, [5, 4]);
+    const qm = qt - 0.6, showW = P2.wkb && qm > 0.4;
+    if (showW) {
+      // WKB under the barrier at the energy E0: one decaying exponential from each well,
+      // psi ~ [e^{-W(|q|)} + e^{-2W(0)+W(|q|)}] / sqrt|p|, W(a) = int_a^qt |p| dq; matched to the exact psi0 at qt - 0.6
+      const pAbs = a => Math.sqrt(Math.max(1e-12, 2 * (Vdw(a, eta) - E0)));
+      const W = a => { if (a >= qt) return 0; const n = 200; let s = 0; for (let i = 0; i < n; i++) s += pAbs(a + (qt - a) * (i + 0.5) / n); return s * (qt - a) / n; };
+      const W0 = W(0), shape = a => (Math.exp(-W(a)) + Math.exp(-2 * W0 + W(a))) / Math.sqrt(pAbs(a));
+      const A = psiFull(v0, x, dx, qm, 1) / shape(qm);
+      curve(q => A * shape(Math.abs(q)), C.sep, 1.6, [2, 3], -qm, qm);
+    }
+    $("wfTitle").textContent = "Ground state, logarithmic scale";
+    $("wfKey").innerHTML = `<span><span class="swatch" style="border-top-color:var(--osc)"></span> ψ<sub>0</sub> exact</span><span><span class="swatch dash"></span> ψ<sub>+</sub> tight-binding</span>${showW ? `<span><span class="swatch dot" style="border-top-color:var(--sep)"></span> WKB</span>` : ""}<span>shaded: forbidden at <span class="m">E</span><sub>0</sub></span>`;
+  }
+  ctx.restore();
+}
+let splitBox = null;
+function drawSplit() {
+  const { ctx, w, h } = prepCanvas($("cvSplit"));
+  const box = { l: 48, t: 10, w: w - 60, h: h - 52 }; splitBox = box;
+  const yr = [-9, 0.4];
+  const { X, Y } = frame(ctx, box, [1, 20], yr, ticks(0, 20, 5).filter(t => t[0] >= 1), logTicks(-9, 0, 5), [["η", 0, 1]], [["ΔE / ħω", 0, 0]]);
+  ctx.save(); ctx.beginPath(); ctx.rect(box.l, box.t, box.w, box.h); ctx.clip();
+  const M = Math.floor(box.w), curve = (fn, col, lw, dash) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); const pts = []; for (let i = 0; i <= M; i++) { const e = 1 + 19 * i / M; pts.push([X(e), Y(Math.log10(fn(e)))]); } polyline(ctx, pts); ctx.setLineDash([]); };
+  curve(asym, C.sep, 1.6, [2, 3]);
+  curve(e => { const t = tb(e); return t.Em - t.Ep; }, C.fg, 1.3, [5, 4]);
+  ctx.strokeStyle = C.osc; ctx.lineWidth = 2; polyline(ctx, SPL.es.map((e, i) => [X(e), Y(Math.log10(SPL.ex[i]))]));
+  const e = P2.eta, de = DW.Eo[0] - DW.Ee[0];
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(e), box.t); ctx.lineTo(X(e), box.t + box.h); ctx.stroke();
+  ctx.fillStyle = C.osc; ctx.beginPath(); ctx.arc(X(e), Y(Math.log10(de)), 4, 0, TAU); ctx.fill();
+  const t = DW.tb; ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(X(e), Y(Math.log10(t.Em - t.Ep)), 3.2, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function table2() {
+  const { Ee, Eo, eta, tb: T } = DW, Vb = eta / 8;
+  let s = `<tr><th>pair</th><th>even</th><th>odd</th><th>splitting</th><th>ħω(<i>n</i>+½)</th><th>tight-binding</th><th></th></tr>`;
+  for (let k = 0; k < NLEV; k++) {
+    const tbc = k === 0 ? `${T.Ep.toFixed(5)}, ${T.Em.toFixed(5)}` : "";
+    const note = Eo[k] > Vb ? "above barrier" : (Ee[k] > Vb ? "near top" : "");
+    s += `<tr><td>${k}</td><td>${Ee[k].toFixed(5)}</td><td>${Eo[k].toFixed(5)}</td><td>${fmtSig(Eo[k] - Ee[k], 3)}</td><td>${(k + 0.5).toFixed(1)}</td><td>${tbc}</td><td style="font-family:var(--font-body);color:var(--muted)">${note}</td></tr>`;
+  }
+  $("lvTable").innerHTML = s;
+}
+function readouts2() {
+  const de = DW.Eo[0] - DW.Ee[0], t = DW.tb, dt = t.Em - t.Ep;
+  $("rVb").textContent = (P2.eta / 8).toFixed(3); $("rDE").textContent = fmtSig(de, 3); $("rDT").textContent = fmtSig(dt, 3);
+  $("rRat").textContent = (de / dt).toFixed(2);
+}
+function drawAll2() { if (!DW) return; if (!SPL) setupSplit(); drawLev(); drawWf(); drawSplit(); table2(); readouts2(); }
+
+/* ======================= UI ======================= */
+let tab = 1, cur1 = "res";
+function labels() {
+  $("ddv").textContent = (P1.D > 0 ? "+" : "") + P1.D.toFixed(2);
+  $("winv").textContent = `${P1.win} × 2π/Ω`;
+  $("owv").textContent = P1.ow.toFixed(P1.ow < 0.05 ? 3 : 2);
+  $("sp1v").textContent = P1.speed.toFixed(2) + "×";
+  $("etav").textContent = P2.eta.toFixed(1);
+  $("etaHint").innerHTML = `<span class="m">g</span> = ħ<span class="m">λ</span>/(√<span class="m">m</span> <span class="m">r</span><sup>3/2</sup>) = √2/η = ${(Math.SQRT2 / P2.eta).toFixed(3)}; overlap <span class="m">S</span> = <span class="m">e</span><sup>−η</sup> = ${fmtSig(Math.exp(-P2.eta), 2)}`;
+  $("keyTd").hidden = !P1.tdpt; $("keyLinP").hidden = !P1.lin; $("keyLinB").hidden = !P1.lin;
+}
+function syncInputs() {
+  $("dd").value = P1.D; $("win").value = P1.win; $("tdpt").checked = P1.tdpt; $("lin").checked = P1.lin;
+  $("ow").value = uFromOw(P1.ow); $("sp1").value = (Math.log10(P1.speed) + 1) / 2;
+  $("eta").value = P2.eta; $("wfLog").checked = P2.log; $("wfLin").checked = !P2.log; $("wkb").checked = P2.wkb;
+  labels();
+}
+function markPresets() {
+  for (const b of document.querySelectorAll("[data-preset1]")) b.setAttribute("aria-pressed", String(b.dataset.preset1 === cur1));
+  for (const b of document.querySelectorAll("[data-preset2]")) b.setAttribute("aria-pressed", String(Math.abs(+b.dataset.preset2 - P2.eta) < 1e-9));
+}
+function applyPreset1(name) {
+  const p = PRE1[name]; cur1 = name;
+  P1.D = p.D; P1.win = p.win; P1.lin = p.lin; if (p.ow) P1.ow = p.ow; P1.t = 0;
+  setPlay1(false); syncInputs(); markPresets(); drawAll1();
+}
+function change1(resetT) { cur1 = ""; if (resetT) P1.t = Math.min(P1.t, tMax()); labels(); markPresets(); drawAll1(); }
+function setEta(e) { P2.eta = +clamp(e, 1, 20).toFixed(1); syncInputs(); markPresets(); setupDW(); drawAll2(); }
+function setTab(k) {
+  tab = k;
+  for (const [id, n] of [["tab1", 1], ["tab2", 2]]) { const b = $(id); b.setAttribute("aria-selected", String(n === k)); b.tabIndex = n === k ? 0 : -1; }
+  for (const el of document.querySelectorAll("[data-tab]")) el.hidden = +el.dataset.tab !== k;
+  $("plots1").hidden = k !== 1; $("plots2").hidden = k !== 2; $("tb1").hidden = k !== 1; $("tb2").hidden = k !== 2;
+  $("notes1").hidden = k !== 1; $("notes2").hidden = k !== 2;
+  if (k === 1) drawAll1();
+  else { setPlay1(false); if (!SPL) setupSplit(); if (!DW) setupDW(); drawAll2(); }
+}
+$("tab1").addEventListener("click", () => setTab(1));
+$("tab2").addEventListener("click", () => setTab(2));
+$("tab1").parentElement.addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const k = tab === 1 ? 2 : 1; setTab(k); $("tab" + k).focus(); e.preventDefault(); } });
+
+for (const b of document.querySelectorAll("[data-preset1]")) b.addEventListener("click", () => applyPreset1(b.dataset.preset1));
+$("dd").addEventListener("input", () => { P1.D = +$("dd").value; change1(); });
+$("win").addEventListener("input", () => { P1.win = +$("win").value; change1(true); });
+$("tdpt").addEventListener("change", e => { P1.tdpt = e.target.checked; change1(); });
+$("lin").addEventListener("change", e => { P1.lin = e.target.checked; change1(); });
+$("ow").addEventListener("input", () => { P1.ow = +owFromU(+$("ow").value).toPrecision(2); change1(); });
+$("sp1").addEventListener("input", () => { P1.speed = Math.pow(10, 2 * +$("sp1").value - 1); labels(); });
+$("tScrub1").addEventListener("input", () => { setPlay1(false); P1.t = +$("tScrub1").value * tMax(); drawAll1(); });
+$("cvLine").addEventListener("click", ev => {
+  if (!lineBox) return; const r = $("cvLine").getBoundingClientRect(), x = ev.clientX - r.left;
+  const d = -8 + 16 * (x - lineBox.l) / lineBox.w; if (d < -8 || d > 8) return;
+  P1.D = Math.round(d * 20) / 20; syncInputs(); change1();
+});
+let playing1 = false;
+const setPlay1 = v => { playing1 = v; $("play1").textContent = v ? "Pause" : "Play"; };
+$("play1").addEventListener("click", () => { if (P1.t >= tMax() - 1e-9) P1.t = 0; setPlay1(!playing1); });
+$("restart1").addEventListener("click", () => { P1.t = 0; drawAll1(); });
+// drag the Bloch sphere
+(() => {
+  const cv = $("cvBloch"); let drag = null;
+  cv.addEventListener("pointerdown", e => { drag = [e.clientX, e.clientY, view.az, view.el]; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; });
+  cv.addEventListener("pointermove", e => { if (!drag) return; view.az = drag[2] - (e.clientX - drag[0]) * 0.01; view.el = clamp(drag[3] + (e.clientY - drag[1]) * 0.01, -1.4, 1.4); drawBloch(); });
+  const up = () => { drag = null; cv.style.cursor = ""; };
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  cv.addEventListener("keydown", e => { const s = 0.08; if (e.key === "ArrowLeft") view.az += s; else if (e.key === "ArrowRight") view.az -= s; else if (e.key === "ArrowUp") view.el = clamp(view.el + s, -1.4, 1.4); else if (e.key === "ArrowDown") view.el = clamp(view.el - s, -1.4, 1.4); else return; e.preventDefault(); drawBloch(); });
+})();
+
+for (const b of document.querySelectorAll("[data-preset2]")) b.addEventListener("click", () => setEta(+b.dataset.preset2));
+let etaTimer = 0;
+$("eta").addEventListener("input", () => { P2.eta = +$("eta").value; labels(); markPresets(); clearTimeout(etaTimer); etaTimer = setTimeout(() => { setupDW(); drawAll2(); }, 30); });
+$("wfLin").addEventListener("change", () => { P2.log = false; drawWf(); });
+$("wfLog").addEventListener("change", () => { P2.log = true; drawWf(); });
+$("wkb").addEventListener("change", e => { P2.wkb = e.target.checked; drawWf(); });
+$("cvSplit").addEventListener("click", ev => {
+  if (!splitBox) return; const r = $("cvSplit").getBoundingClientRect(), x = ev.clientX - r.left;
+  const e = 1 + 19 * (x - splitBox.l) / splitBox.w; if (e < 1 || e > 20) return; setEta(e);
+});
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  if (tab === 1 && playing1) {
+    // speed 1x: the whole window takes about 12 s
+    P1.t += dt * P1.speed * tMax() / 12;
+    if (P1.t >= tMax()) { P1.t = tMax(); setPlay1(false); }
+    drawAll1();
+  }
+  requestAnimationFrame(loop);
+}
+const redraw = () => tab === 1 ? drawAll1() : drawAll2();
+const themeChange = () => { readColors(); redraw(); };
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeChange);
+new MutationObserver(themeChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+let rz = 0; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(redraw); }).observe(document.querySelector(".viz"));
+
+readColors();
+$("rNx").textContent = NX;
+syncInputs();
+applyPreset1("res");
+setTab(1);
+requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
+
+// hook for testing
+window.rdw = { P1, P2, Pex, Ptd, blochExact, solveLinear, get LIN() { return LIN; }, linAt, tridiag, eigval, exactSplit, tb, setupDW, get DW() { return DW; }, setTab, setEta, applyPreset1, drawAll1 };
+})();
+</script>
+</body>
+</html>
