@@ -148,13 +148,17 @@
 
 <div class="toolbar" role="toolbar" aria-label="Chart controls">
   <div class="group"><span class="seg" id="viewSeg" aria-label="View"></span></div>
-  <div class="group"><label for="colorSel">Colour</label>
+  <div class="group" id="colorGroup"><label for="colorSel">Colour</label>
     <select id="colorSel"><option value="field">Field</option><option value="born">Birth year</option></select></div>
   <div class="group" id="labelGroup"><label for="labelSel">Labels</label>
     <select id="labelSel"><option value="key">Key figures</option><option value="all">All</option><option value="none">None</option></select></div>
   <div class="group"><label>Born</label>
     <input type="number" class="yr" id="yrMin" step="50" aria-label="Born from">–<input type="number" class="yr" id="yrMax" step="50" aria-label="Born to"></div>
   <div class="group"><label for="breadthSel">Breadth</label><select id="breadthSel"></select></div>
+  <div class="group" id="eraGroup" style="display:none"><label for="eraMetric">Show</label>
+    <select id="eraMetric"><option value="breadth">Breadth</option><option value="axes">Each axis separately</option></select>
+    <label for="eraBin">Bins</label>
+    <select id="eraBin"><option value="25">25 years</option><option value="50" selected>50 years</option><option value="100">100 years</option></select></div>
   <div class="group" id="axesGroup" title="Assign data dimensions to the X / Y / Z axes"><label>Axes</label>
     <select id="axX" aria-label="X axis"></select><select id="axY" aria-label="Y axis"></select><select id="axZ" aria-label="Z axis"></select></div>
   <div class="group"><input type="text" id="search" placeholder="Search name…" aria-label="Search"></div>
@@ -217,6 +221,7 @@
   Shape and colour both encode field. Wall projections in 3D show each point's shadow on the three back planes.
   <span id="breadthDescr"></span> The <em>Breadth ranking</em> view orders everyone by this composite, with each
   person’s individual axis scores marked on their row, so placements that look out of order are easy to spot and fix.
+  <em>Breadth by era</em> bins people by birth year (everyone before 1500 pooled) and shows the mean score per bin, for breadth or for each axis separately.
   “Jitter ties” nudges points with identical integer scores apart (hover shows the true values).
   Inspired by Fig.&nbsp;1 of D.&nbsp;Green, “Shut Up and Compute: Thoughts on Research in the Era of AI” (2026). Built with Plotly.js; data lives in <code>data.js</code>.
 </footer>

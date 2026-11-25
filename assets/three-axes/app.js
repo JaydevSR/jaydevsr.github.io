@@ -24,6 +24,8 @@
     axes: { x: "math", y: "exp", z: "intuition" },
     colorBy: "field",
     breadth: "geo",                 // key of BREADTH
+    eraMetric: "breadth",           // "breadth" | "axes"  (era histogram)
+    eraBin: 50,                     // years per bin
     labels: "key",
     yrMin: null, yrMax: null,
     search: "",
@@ -46,8 +48,17 @@
     try {
       const raw = localStorage.getItem(STORE_KEY);
       if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length) return withIds(arr);
+        const parsed = JSON.parse(raw);
+        // Stored as {v, data}; a bare array is the first (v1) format.
+        const arr = Array.isArray(parsed) ? parsed : parsed && parsed.data;
+        const v = Array.isArray(parsed) ? 1 : (parsed && parsed.v) || 1;
+        if (Array.isArray(arr) && arr.length) {
+          if (v < (window.DATA_VERSION || 1)) {
+            const have = new Set(arr.map((d) => d.name));
+            SCIENTISTS.forEach((d) => { if (!have.has(d.name)) arr.push(clone(d)); });
+          }
+          return withIds(arr);
+        }
       }
     } catch (e) { /* storage unavailable: fall back to defaults */ }
     return withIds(clone(SCIENTISTS));
@@ -56,7 +67,7 @@
   function save() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(stripIds(state.data))); setSaveState("Edits are kept in this browser."); }
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ v: window.DATA_VERSION || 1, data: stripIds(state.data) })); setSaveState("Edits are kept in this browser."); }
       catch (e) { setSaveState("This browser isn't keeping edits — export JSON to keep them."); }
     }, 250);
   }
@@ -100,7 +111,10 @@
     return state.jitter ? v + J * hash(d.name, hash(key, 7) * 1e9 | 0) : v;
   }
   const fmtYear = (y) => (y == null ? "" : y < 0 ? `${-y} BCE` : `${y}`);
-  const lifespan = (d) => d.died == null ? `b. ${fmtYear(d.born)}` : `${fmtYear(d.born)}–${fmtYear(d.died)}`;
+  const lifespan = (d) => {
+    const c = d.approx ? "c. " : "";
+    return d.died == null ? `b. ${c}${fmtYear(d.born)}` : `${c}${fmtYear(d.born)}–${fmtYear(d.died)}`;
+  };
   const total = (d) => axisKeys().reduce((s, k) => s + Number(d[k] ?? 0), 0);
 
   // ── Breadth of knowledge ────────────────────────────────────────────
@@ -343,7 +357,8 @@
       { id: "xz", label: `${s(a.x)} × ${s(a.z)}`, dims: [a.x, a.z] },
       { id: "yz", label: `${s(a.y)} × ${s(a.z)}`, dims: [a.y, a.z] },
       { id: "all", label: "All projections" },
-      { id: "rank", label: "Breadth ranking" }
+      { id: "rank", label: "Breadth ranking" },
+      { id: "era", label: "Breadth by era" }
     ];
   };
 
@@ -417,6 +432,84 @@
     return { traces, height };
   }
 
+
+  // ── Era histogram: mean score per birth-period bin ──────────────────
+  // Everyone born before ERA_START is pooled in one "earlier" bin so antiquity
+  // doesn't stretch the axis. Bars show the mean, whiskers ±1 s.d., n under each bin.
+  const ERA_START = 1500;
+  function eraBins(rows) {
+    const w = state.eraBin;
+    const bins = new Map();
+    rows.forEach((d) => {
+      const k = d.born < ERA_START ? -Infinity : ERA_START + Math.floor((d.born - ERA_START) / w) * w;
+      if (!bins.has(k)) bins.set(k, []);
+      bins.get(k).push(d);
+    });
+    // Show empty periods too, so gaps in the dataset are visible rather than hidden.
+    const modern = rows.filter((d) => d.born >= ERA_START).map((d) => d.born);
+    if (modern.length) {
+      const last = ERA_START + Math.floor((Math.max(...modern) - ERA_START) / w) * w;
+      for (let k = ERA_START; k <= last; k += w) if (!bins.has(k)) bins.set(k, []);
+    }
+    return [...bins.entries()].sort((a, b) => a[0] - b[0]).map(([k, ds]) => ({
+      key: k, rows: ds,
+      label: k === -Infinity ? `before ${ERA_START}` : `${k}–${k + w - 1}`
+    }));
+  }
+  const meanSd = (v) => {
+    const m = v.reduce((s, x) => s + x, 0) / v.length;
+    const sd = Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / v.length);
+    return [m, sd];
+  };
+  function buildEra(t, L) {
+    const rows = visibleData();
+    const bins = eraBins(rows);
+    const cats = bins.map((b) => b.label);
+    const tickText = bins.map((b) => `${b.label}<br><span style="font-size:10px">n = ${b.rows.length}</span>`);
+    const metrics = state.eraMetric === "axes"
+      ? axisKeys().map((k) => ({ id: k, title: AXES[k].label, val: (d) => Number(d[k] ?? 0) }))
+      : [{ id: "breadth", title: `Breadth (${BREADTH[state.breadth].label.toLowerCase()})`, val: breadth }];
+    const nP = metrics.length;
+    const gap = 0.07;
+    const ph = (1 - gap * (nP - 1)) / nP;
+    const traces = [];
+    metrics.forEach((m, i) => {
+      const sfx = i === 0 ? "" : String(i + 1);
+      const stats = bins.map((b) => b.rows.length ? meanSd(b.rows.map(m.val)) : [null, 0]);
+      const top = (b) => b.rows.slice().sort((x, y) => m.val(y) - m.val(x)).slice(0, 3).map((d) => d.name).join(", ");
+      traces.push({
+        type: "bar", x: cats, y: stats.map((s) => s[0]), name: m.title, showlegend: false, uid: `era-${m.id}`,
+        xaxis: "x" + sfx, yaxis: "y" + sfx,
+        marker: { color: t.accent, line: { width: 0 } }, width: 0.8,
+        error_y: { type: "data", array: stats.map((s) => s[1]), color: t.text2, thickness: 1.2, width: 4 },
+        customdata: bins.map((b, j) => [b.rows.length, stats[j][1].toFixed(1), top(b)]),
+        hovertemplate: `<b>%{x}</b><br>${m.title}: mean <b>%{y:.1f}</b> ± %{customdata[1]}` +
+          `<br>n = %{customdata[0]}<br>Highest: %{customdata[2]}<extra></extra>`
+      });
+      const y0 = 1 - i * (ph + gap) - ph;
+      L["yaxis" + sfx] = {
+        domain: [y0, y0 + ph], range: [0, 10.4], dtick: 2, gridcolor: t.grid, linecolor: t.axis,
+        tickfont: { color: t.text2 }, zeroline: false, showline: true, fixedrange: true,
+        title: { text: nP > 1 ? AXES[m.id].short : "Mean score", font: { color: t.text2, size: 12 } }
+      };
+      L["xaxis" + sfx] = {
+        anchor: "y" + sfx, type: "category", categoryorder: "array", categoryarray: cats,
+        tickvals: cats, ticktext: i === nP - 1 ? tickText : cats.map(() => ""),
+        tickfont: { color: t.text2, size: 11 }, linecolor: t.axis, showline: true, fixedrange: true,
+        matches: i === 0 ? undefined : "x"
+      };
+      L.annotations = (L.annotations || []).concat([{
+        text: `<b>${m.title}</b> — mean per birth period, whiskers ±1 s.d.`, xref: "paper", yref: "paper",
+        x: 0, y: y0 + ph, xanchor: "left", yanchor: "bottom", showarrow: false, font: { color: t.text, size: 12 }
+      }]);
+    });
+    const height = nP > 1 ? 860 : 520;
+    L.height = height; L.bargap = 0.15;
+    L.margin = { l: 60, r: 30, t: 40, b: 80 };
+    delete L.coloraxis;
+    return { traces, height };
+  }
+
   // ── Render ──────────────────────────────────────────────────────────
   const plotEl = document.getElementById("plot");
   let wired = false;
@@ -433,6 +526,9 @@
 
     if (state.view === "rank") {
       const r = buildRanking(t, L);
+      traces = r.traces; height = r.height;
+    } else if (state.view === "era") {
+      const r = buildEra(t, L);
       traces = r.traces; height = r.height;
     } else if (state.view === "3d") {
       traces = buildTraces([a.x, a.y, a.z], 1, true, t);
@@ -524,9 +620,11 @@
       seg.appendChild(b);
     });
     const show = (id, on) => { document.getElementById(id).style.display = on ? "" : "none"; };
-    const rank = state.view === "rank";
+    const rank = state.view === "rank" || state.view === "era";
     document.getElementById("shadows").parentElement.style.display = state.view === "3d" ? "" : "none";
     show("jitterWrap", !rank); show("axesGroup", !rank); show("labelGroup", !rank);
+    show("eraGroup", state.view === "era");
+    if (state.view === "era") { show("colorGroup", false); } else { show("colorGroup", true); }
   }
 
   function fillAxisSelects() {
@@ -555,6 +653,8 @@
     $("breadthSel").value = state.breadth;
     $("breadthSel").onchange = (e) => { state.breadth = e.target.value; update(); renderDetail(); describeBreadth(); };
     describeBreadth();
+    $("eraMetric").onchange = (e) => { state.eraMetric = e.target.value; render(); };
+    $("eraBin").onchange = (e) => { state.eraBin = Number(e.target.value); render(); };
     $("labelSel").onchange = (e) => { state.labels = e.target.value; render(); };
     const yr = (v) => (v === "" ? null : Number(v));
     $("yrMin").oninput = (e) => { state.yrMin = yr(e.target.value); update(); };
