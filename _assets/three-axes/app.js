@@ -388,7 +388,7 @@
     // Individual axis scores as small markers on each row: shows *why* someone ranks where they do.
     axisKeys().forEach((k, i) => {
       traces.push({
-        type: "scatter", mode: "markers", name: `${AXES[k].short} score`, legendgroup: `cmp-${k}`, uid: `cmp-${k}`,
+        type: "scatter", mode: "markers", name: AXES[k].label, legendgroup: `cmp-${k}`, uid: `cmp-${k}`,
         y: rows.map((d) => d.name), x: rows.map((d) => Number(d[k] ?? 0)),
         customdata: rows.map((d) => d._id), hovertext: rows.map(hov), hovertemplate: "%{hovertext}<extra></extra>",
         marker: { symbol: CMP_SYMBOLS[i % CMP_SYMBOLS.length], size: 8, color: t.text, line: { width: 1.5, color: t.text } },

@@ -8,7 +8,8 @@
  *   field    – one of the keys in FIELDS below (add new fields there)
  *   math     – mathematical sophistication       (0–10)
  *   exp      – experimental technique            (0–10)
- *   intuition – physical intuition               (0–10)
+ *   intuition – physical intuition (a feel for how nature behaves; NOT mathematical
+ *               intuition, which belongs on the math axis)   (0–10). Shown as "Physics".
  *   star     – true => labelled by default in the "Key figures" label mode
  *   note     – one-line justification shown in the detail panel
  *
@@ -29,7 +30,7 @@ window.FIELDS = {
 window.AXES = {
   math:    { label: "Mathematical sophistication", short: "Math" },
   exp:     { label: "Experimental technique",      short: "Experiment" },
-  intuition: { label: "Physical intuition",        short: "Intuition" }
+  intuition: { label: "Physical intuition",        short: "Physics" }
 };
 
 window.SCIENTISTS = [
